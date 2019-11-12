@@ -63,7 +63,6 @@ for m in range(0, 12) :
 			req = requests.get(url, headers=headers, allow_redirects=True)
 			xml = str(req.text)
 			
-			
 			print('Load:', url, '#', counter)
 			print('http://tenhou.net/0/?log='+para)
 			
