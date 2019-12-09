@@ -84,8 +84,10 @@ def xml_parse(filename) :
                 idx = {'D': 0, 'E': 1, 'F': 2, 'G': 3}
                 who = idx[elem[0]]
                 pai = int(elem[1:])
-                if len(tsumo[who]) == 0 or tsumo[who][-1] != pai :
+                # 手出し
+                if len(tsumo[who]) != 0 and tsumo[who][-1] != pai :
                     dahai[who].append(pai_transform(pai))
+                # ツモ切り
                 else :
                     dahai[who].append(pai_transform(pai) + 37)
 
@@ -97,28 +99,23 @@ def xml_parse(filename) :
                     if i != machi :
                         tehai[i // 4] += 1
                 
-                in1 = [0] * (74 * 74) # 打牌順序
-                in2 = [0] * (2 * 3 * 21 + 2 * 34 + 3 * 34) # 副露
                 out1 = [0] * 34 # 当たり牌
-
+                in1 = set() # 打牌順序
+                in2 = set() # 副露
                 for i in range(len(dahai[who])) :
                     for j in range(i + 1, len(dahai[who])) :
-                        in1[dahai[who][i] * 37 + dahai[who][j]] = 1
+                        in1.add(dahai[who][i] * 74 + dahai[who][j])
                 
                 if 'm' in attr :
                     for i in map(int, attr['m'].split(',')) :
-                        in2[huro_transform(i)] = 1
+                        in2.add(74 * 74 + huro_transform(i))
 
                 for i in get_yuko(tehai, [4] * 34, 0) :
                     out1[i] = 1
 
                 with open('sample.csv', 'a') as f :
                     writer = csv.writer(f)
-                    writer.writerow(in1 + in2 + out1)
-                # DEBUG用
-                # print('手牌', tehai)
-                # print('上がり牌', [pai_name(i) for i in all_machi])
-                # print('打牌', dahai[who])
+                    writer.writerow(out1 + list(in1) + list(in2))
 
             elif elem == 'RYUUKYOKU' :
                 # print('RYUKYOKU')
@@ -128,10 +125,10 @@ def xml_format(year, output_file_name='output.json') :
     file_dir = './xml' + str(year)
     count = 0
     for filename in os.listdir(file_dir) :
-        print(filename)
-        xml_parse(file_dir + '/' + filename)
         count += 1
-        if count == 10000 :
+        print(count, filename)
+        xml_parse(file_dir + '/' + filename)
+        if count == 30000 :
             break
 
 xml_format(2017)
