@@ -1,3 +1,4 @@
+# 2列用 (40000行)
 import os, re, csv
 from shanten import get_yuko
 
@@ -113,7 +114,7 @@ def xml_parse(filename) :
                 for i in get_yuko(tehai, [4] * 34, 0) :
                     out1[i] = 1
 
-                with open('sample.csv', 'a') as f :
+                with open('sample0.csv', 'a') as f :
                     writer = csv.writer(f)
                     writer.writerow(out1 + list(in1) + list(in2))
 
