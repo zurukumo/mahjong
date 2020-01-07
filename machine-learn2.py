@@ -1,5 +1,4 @@
 # 2列 0~33まで
-# input -> sample.csv (2000半荘分)
 
 import numpy as np
 import pandas as pd

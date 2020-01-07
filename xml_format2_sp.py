@@ -1,6 +1,6 @@
 # 2列用
 
-COUNT = 10000
+COUNT = 167675
 
 import os, re, csv
 from shanten import get_yuko
@@ -106,6 +106,10 @@ def xml_parse(filename) :
                 out1 = [0] * 34 # 当たり牌
                 in1 = set() # 打牌順序
                 in2 = set() # 副露
+
+                if len(dahai[who]) < 10 :
+                    continue
+
                 for i in range(len(dahai[who])) :
                     for j in range(i + 1, len(dahai[who])) :
                         in1.add(dahai[who][i] * 74 + dahai[who][j])
@@ -117,9 +121,14 @@ def xml_parse(filename) :
                 for i in get_yuko(tehai, [4] * 34, 0) :
                     out1[i] = 1
 
-                with open('sample2.csv', 'a') as f :
+                with open('sample2-sp.csv', 'a') as f :
+                    global COUNT
                     writer = csv.writer(f)
                     writer.writerow(out1 + list(in1) + list(in2))
+                    print(COUNT)
+                    COUNT -= 1
+                    if COUNT == 0 :
+                        return 
 
             elif elem == 'RYUUKYOKU' :
                 # print('RYUKYOKU')
@@ -129,10 +138,8 @@ def xml_format(year, output_file_name='output.json') :
     file_dir = './xml' + str(year)
     count = 0
     for filename in os.listdir(file_dir) :
-        count += 1
-        print(count, filename)
         xml_parse(file_dir + '/' + filename)
-        if count == COUNT :
+        if COUNT == 0 :
             break
 
 xml_format(2017)
