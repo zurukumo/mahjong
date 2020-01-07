@@ -19,7 +19,7 @@ x = []
 for row in f :
     row = [int(r) for r in row]
     t_ = [0] * 34
-    x_ = [0] * 5772
+    x_ = [0] * (74 * 74 * 74 + 296)
     for i, v in enumerate(row[:34]) :
         if v == 1 :
             t_[i] = 1
@@ -41,7 +41,7 @@ for pi in range(4, 5) :
     x_train, x_val, t_train, t_val = train_test_split(x_train_val, t_train_val, test_size=0.3, random_state=0)
     
     # net としてインスタンス化
-    n_input = 5772
+    n_input = 74 * 74 * 74 + 296
     n_hidden = 100
     n_output = 2
 

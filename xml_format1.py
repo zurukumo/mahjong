@@ -1,4 +1,7 @@
-# 1列用 (2000行)
+# 1列用
+
+COUNT = 300
+
 import os, re, csv
 from shanten import get_yuko
 
@@ -128,7 +131,7 @@ def xml_format(year, output_file_name='output.json') :
         count += 1
         print(count, filename)
         xml_parse(file_dir + '/' + filename)
-        if count == 20000 :
+        if count == COUNT :
             break
 
 xml_format(2017)
