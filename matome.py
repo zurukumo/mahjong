@@ -1,5 +1,7 @@
-with open('matome.txt', 'r') as fp1 :
-  content = fp1.readlines()
+filename = 'result-?-?'
+
+with open(filename + 'matome.txt', 'r') as mf :
+  content = mf.readlines()
   for line in content :
     ret = []
     a = map(float, line.split(','))

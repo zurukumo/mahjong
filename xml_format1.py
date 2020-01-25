@@ -1,6 +1,6 @@
 # 1列用
 
-COUNT = 300
+COUNT = 800
 
 import os, re, csv
 from shanten import get_yuko
