@@ -1,6 +1,6 @@
 # 1列用
 
-COUNT = 800
+COUNT = 1000
 
 import os, re, csv
 from shanten import get_yuko
@@ -71,10 +71,6 @@ def xml_parse(filename) :
                 tsumo = [[] for _ in range(4)]
                 dahai = [[] for _ in range(4)]
                 huro = [[] for _ in range(4)]
-                kyoku, honba, kyotaku, _, _, dora = map(int, attr['seed'].split(','))
-                oya = attr['oya']
-                # print()
-                # print('INIT')
             
             # ツモ情報
             elif re.match(r'[T|U|V|W][0-9]+', elem) :
@@ -116,7 +112,7 @@ def xml_parse(filename) :
                 for i in get_yuko(tehai, [4] * 34, 0) :
                     out1[i] = 1
 
-                with open('sample1.csv', 'a') as f :
+                with open('sample1-' + str(COUNT) + '.csv', 'a') as f :
                     writer = csv.writer(f)
                     writer.writerow(out1 + list(in1) + list(in2))
 

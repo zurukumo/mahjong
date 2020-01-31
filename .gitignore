@@ -3,5 +3,6 @@ __pycache__
 xml2017
 *.csv
 *.zip
+*.net
 *.code-workspace
 ~*
