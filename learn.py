@@ -1,11 +1,6 @@
-import sys
-args = sys.argv
-if len(args) <= 2 :
-  print('need 4 args')
-  exit()
-
-in_file = args[1]
-comb = int(args[2])
+COMB = 2
+LEN = 5
+in_file = 'sample' + str(COMB) + '-sp-' + str(LEN) + '-'
 
 import numpy as np
 import pandas as pd
@@ -17,55 +12,46 @@ import sklearn.metrics
 
 from sklearn.model_selection import train_test_split
 from chainer import Sequential
-
-file = open(in_file, 'r')
-f = csv.reader(file, delimiter=",")
-t = []
-x = []
-for row in f :
-  row = [int(r) for r in row]
-  t_ = [0] * 34
-  x_ = [0] * (74 ** comb + 296)
-  for i, v in enumerate(row[:34]) :
-    if v == 1 :
-      t_[i] = 1
-  for i in row[34:] :
-    x_[i] = 1
-      
-  t.append(t_)
-  x.append(x_)
-
-t = np.array(t)
-x = np.array(x)
-
-x = x.astype('float32')
-t = t.astype('int32')
-
-print('loaded')
+from chainer import serializers
 
 for pi in range(34) :
-  t_ = t[:, pi]
-  x_train_val, x_test, t_train_val, t_test = train_test_split(x, t_, test_size=0.3, random_state=0)
+  file = open(in_file + str(pi) + '.csv', 'r')
+  f = csv.reader(file, delimiter=",")
+  t = []
+  x = []
+  for row in f :
+    row = [int(r) for r in row]
+    t.append(row[0])
+    
+    x_ = [0] * (74 ** COMB + 296)
+    for i in row[1:] :
+      x_[i] = 1
+    x.append(x_)
+
+  x = np.array(x).astype('float32')
+  t = np.array(t).astype('int32')
+
+  x_train_val, x_test, t_train_val, t_test = train_test_split(x, t, test_size=0.3, random_state=0)
   x_train, x_val, t_train, t_val = train_test_split(x_train_val, t_train_val, test_size=0.3, random_state=0)
-  
+
   # net としてインスタンス化
-  n_input = (74 ** comb + 296)
+  n_input = (74 ** COMB + 296)
   n_hidden = 100
   n_output = 2
 
   net = Sequential(
-      L.Linear(n_input, n_hidden), F.relu,
-      L.Linear(n_hidden, n_hidden), F.relu,
-      L.Linear(n_hidden, n_hidden), F.relu,
-      L.Linear(n_hidden, n_output)
+    L.Linear(n_input, n_hidden), F.relu,
+    L.Linear(n_hidden, n_hidden), F.relu,
+    L.Linear(n_hidden, n_hidden), F.relu,
+    L.Linear(n_hidden, n_output)
   )
-  
+
   optimizer = chainer.optimizers.Adam()
   optimizer.setup(net)
-  
-  n_epoch = 60
+
+  n_epoch = 50
   n_batchsize = 16
-  
+
   iteration = 0
 
   for epoch in range(n_epoch):
@@ -116,8 +102,11 @@ for pi in range(34) :
     accuracy_val = F.accuracy(y_val, t_val)
     summary = F.classification_summary(y_val, t_val)
 
-    with open('result' + str(comb) + '-' + str(pi) + '.txt', 'a') as f :
-      # 結果の表示
-      ret = 'epoch:{}, iteration:{}, loss(train):{}, loss(valid):{}, acc(train):{}, acc(valid):{}, precision0:{}, precision1:{}, recall0:{}, recall1:{}, f1score0:{}, f1score1:{}'.format(epoch, iteration, loss_train, loss_val.array, accuracy_train, accuracy_val.array, summary[0][0], summary[0][1], summary[1][0], summary[1][1], summary[2][0], summary[2][1])
-      print(ret)
-      f.write(ret + "\n")
+    # with open('result2-sp-' + str(pi) + '.txt', 'a') as f :
+    #   # 結果の表示
+    #   ret = 'epoch:{}, iteration:{}, loss(train):{}, loss(valid):{}, acc(train):{}, acc(valid):{}, precision0:{}, precision1:{}, recall0:{}, recall1:{}, f1score0:{}, f1score1:{}'.format(epoch, iteration, loss_train, loss_val.array, accuracy_train, accuracy_val.array, summary[0][0], summary[0][1], summary[1][0], summary[1][1], summary[2][0], summary[2][1])
+    #   print(ret)
+    #   f.write(ret + "\n")
+    print('epoch:', epoch)
+
+  chainer.serializers.save_npz('result-sp-' + str(LEN) + '-' + str(pi) + '.net', net)
