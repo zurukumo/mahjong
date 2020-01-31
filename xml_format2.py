@@ -1,6 +1,6 @@
 # 2列用
 
-COUNT = 100
+COUNT = float('inf')
 
 import os, re, csv
 from shanten import get_yuko
@@ -63,9 +63,7 @@ def huro_transform(m) :
     else :
       return CHI + PON + 68 + bit_sum(b[8:16]) // 4
 
-a = 0
 def xml_parse(filename) :
-  global a
   with open(filename, 'r') as xml :
     for elem, attr in re.findall(r'<(.*?)[ /](.*?)/?>', xml.read()) :
       attr = dict(re.findall(r'\s?(.*?)="(.*?)"', attr))
@@ -73,8 +71,6 @@ def xml_parse(filename) :
         tsumo = [[] for _ in range(4)]
         dahai = [[] for _ in range(4)]
         huro = [[] for _ in range(4)]
-        kyoku, honba, kyotaku, _, _, dora = map(int, attr['seed'].split(','))
-        oya = attr['oya']
     
       # ツモ情報
       elif re.match(r'[T|U|V|W][0-9]+', elem) :
@@ -96,14 +92,13 @@ def xml_parse(filename) :
           dahai[who].append(pai_transform(pai) + 37)
 
       elif elem == 'AGARI' :
-        a += 1
         who = int(attr['who'])
         tehai = [0 for _ in range(34)]
         machi = int(attr['machi'])
         for i in map(int, attr['hai'].split(',')) :
           if i != machi :
             tehai[i // 4] += 1
-        
+
         out1 = [0] * 34 # 当たり牌
         in1 = set() # 打牌順序
         in2 = set() # 副露
@@ -127,10 +122,8 @@ def xml_format(year, output_file_name='output.json') :
   count = 0
   for filename in os.listdir(file_dir) :
     count += 1
-    global a
-    a = 0
     xml_parse(file_dir + '/' + filename)
-    print(count, a, filename)
+    print(count, filename)
     if count == COUNT :
       break
 

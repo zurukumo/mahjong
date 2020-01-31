@@ -13,10 +13,10 @@ import csv
 import chainer
 import chainer.links as L
 import chainer.functions as F
-from chainer import Sequential
-
 import sklearn.metrics
+
 from sklearn.model_selection import train_test_split
+from chainer import Sequential
 
 file = open(in_file, 'r')
 f = csv.reader(file, delimiter=",")
@@ -35,26 +35,22 @@ for row in f :
   t.append(t_)
   x.append(x_)
 
+t = np.array(t)
+x = np.array(x)
+
+x = x.astype('float32')
+t = t.astype('int32')
+
+print('loaded')
+
 for pi in range(34) :
-  px = []
-  nx = []
-
-  for i in range(len(t)) :
-    if t[i][pi] == 0 :
-      nx.append(x[i])
-    else :
-      px.append(x[i])
-
-  px = np.array(px).astype('float32')
-  nx = np.array(nx).astype('float32')
-
-  x_train_val, x_test, t_train_val, t_test = train_test_split(nx, np.zeros(len(nx), dtype='int32'), test_size=0.3, random_state=0)
+  t_ = t[:, pi]
+  x_train_val, x_test, t_train_val, t_test = train_test_split(x, t_, test_size=0.3, random_state=0)
   x_train, x_val, t_train, t_val = train_test_split(x_train_val, t_train_val, test_size=0.3, random_state=0)
-  p_val, px = train_test_split(px, test_size=0.3, random_state=0)
   
   # net としてインスタンス化
   n_input = (74 ** comb + 296)
-  n_hidden = 50
+  n_hidden = 100
   n_output = 2
 
   net = Sequential(
@@ -67,7 +63,7 @@ for pi in range(34) :
   optimizer = chainer.optimizers.Adam()
   optimizer.setup(net)
   
-  n_epoch = 100
+  n_epoch = 60
   n_batchsize = 16
   
   iteration = 0
@@ -81,11 +77,9 @@ for pi in range(34) :
     accuracy_list = []
     for i in range(0, len(order), n_batchsize):
       # バッチを準備
-      index1 = order[i:i+n_batchsize]
-      index2 = order[i:i+n_batchsize] % (len(px))
-      n = index1.shape[0]
-      x_train_batch = np.concatenate([x_train[index1,:], px[index2,:]])
-      t_train_batch = np.concatenate([np.zeros(n), np.ones(n)]).astype('int32')
+      index = order[i:i+n_batchsize]
+      x_train_batch = x_train[index,:]
+      t_train_batch = t_train[index]
 
       # 予測値を出力
       y_train_batch = net(x_train_batch)
@@ -96,6 +90,7 @@ for pi in range(34) :
 
       loss_list.append(loss_train_batch.array)
       accuracy_list.append(accuracy_train_batch.array)
+
 
       # 勾配のリセットと勾配の計算
       net.cleargrads()
@@ -111,16 +106,12 @@ for pi in range(34) :
     loss_train = np.mean(loss_list)
     accuracy_train = np.mean(accuracy_list)
 
-    x_val = np.concatenate([x_val, p_val])
-    t_val = np.concatenate([t_val, np.ones(len(p_val), dtype='int32')])
-
     # 1エポック終えたら、検証データで評価
     # 検証データで予測値を出力
     with chainer.using_config('train', False), chainer.using_config('enable_backprop', False):
       y_val = net(x_val)
 
     # 目的関数を適用し、分類精度を計算
-    y_val 
     loss_val = F.softmax_cross_entropy(y_val, t_val)
     accuracy_val = F.accuracy(y_val, t_val)
     summary = F.classification_summary(y_val, t_val)
