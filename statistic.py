@@ -1,5 +1,8 @@
 COMB = 2
 LEN = 10
+LINE = {0: 1670121, 5: 1640467, 10: 1092518}[LEN]
+SIZE = 80000
+filename = 'sample2-sp-' + str(LEN) + '.csv'
 
 def model_name(pi) :
   return 'result-sp-' + str(LEN) + '-' + str(pi) + '.net'
@@ -16,6 +19,8 @@ import sklearn.metrics
 from sklearn.model_selection import train_test_split
 from chainer import Sequential
 from chainer import serializers
+
+import random
 
 n_input = 74 ** COMB + 296
 n_hidden = 100
@@ -43,10 +48,15 @@ pos[(0, 1)] = 2 # fn
 pos[(1, 0)] = 1 # fp
 pos[(1, 1)] = 0 # tp
 
-with open('sample2-all.csv') as f :
+samples = set(random.sample(range(LINE), SIZE))
+print(samples)
+
+with open(filename) as f :
   line = f.readline().split(',')
-  i = 0
-  while line :
+  for i in range(LINE) :
+    if not i in samples :
+      continue
+    print(i)
     x = [[0] * (74 ** COMB + 296)]
     for v in map(int, line[34:]) :
       x[0][v] = 1
@@ -61,9 +71,8 @@ with open('sample2-all.csv') as f :
         result[pi][pos[(t, y)]] += 1
       
     line = f.readline().split(',')
-    i += 1
 
-e = 1e-10  
+e = 1e-10
 for pi in range(34) :
   tp, fp, fn, tn = result[pi]
   pre = tp / (tp + fp + e)
