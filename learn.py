@@ -1,5 +1,5 @@
 COMB = 2
-LEN = 5
+LEN = 0
 in_file = 'sample' + str(COMB) + '-sp-' + str(LEN) + '-'
 
 import numpy as np
