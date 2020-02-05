@@ -1,9 +1,8 @@
 COMB = 2
-LEN = 0
+LEN = 10
 in_file = 'sample' + str(COMB) + '-sp-' + str(LEN) + '-'
 
 import numpy as np
-import pandas as pd
 import csv
 import chainer
 import chainer.links as L
@@ -15,6 +14,7 @@ from chainer import Sequential
 from chainer import serializers
 
 for pi in range(34) :
+  print(pi)
   file = open(in_file + str(pi) + '.csv', 'r')
   f = csv.reader(file, delimiter=",")
   t = []
@@ -36,7 +36,7 @@ for pi in range(34) :
 
   # net としてインスタンス化
   n_input = (74 ** COMB + 296)
-  n_hidden = 100
+  n_hidden = 128
   n_output = 2
 
   net = Sequential(
@@ -53,6 +53,10 @@ for pi in range(34) :
   n_batchsize = 16
 
   iteration = 0
+
+  # gpu = 0
+  # chainer.cuda.get_device(gpu).use()
+  # net.to_gpu(gpu)
 
   for epoch in range(n_epoch):
     # データセット並べ替えた順番を取得
@@ -104,9 +108,10 @@ for pi in range(34) :
 
     # with open('result2-sp-' + str(pi) + '.txt', 'a') as f :
     #   # 結果の表示
-    #   ret = 'epoch:{}, iteration:{}, loss(train):{}, loss(valid):{}, acc(train):{}, acc(valid):{}, precision0:{}, precision1:{}, recall0:{}, recall1:{}, f1score0:{}, f1score1:{}'.format(epoch, iteration, loss_train, loss_val.array, accuracy_train, accuracy_val.array, summary[0][0], summary[0][1], summary[1][0], summary[1][1], summary[2][0], summary[2][1])
-    #   print(ret)
+    ret = 'epoch:{}, iteration:{}, loss(train):{}, loss(valid):{}, acc(train):{}, acc(valid):{}, precision0:{}, precision1:{}, recall0:{}, recall1:{}, f1score0:{}, f1score1:{}'.format(epoch, iteration, loss_train, loss_val.array, accuracy_train, accuracy_val.array, summary[0][0], summary[0][1], summary[1][0], summary[1][1], summary[2][0], summary[2][1])
+    print(ret)
     #   f.write(ret + "\n")
     print('epoch:', epoch)
 
-  chainer.serializers.save_npz('result-sp-' + str(LEN) + '-' + str(pi) + '.net', net)
+  # net.to_cpu()
+  chainer.serializers.save_npz('result' + str(COMB) + '-sp-' + str(LEN) + '-' + str(pi) + '.net', net)

@@ -1,11 +1,11 @@
-COMB = 2
+COMB = 1
 LEN = 10
 LINE = {0: 1670121, 5: 1640467, 10: 1092518}[LEN]
 SIZE = 80000
-filename = 'sample2-sp-' + str(LEN) + '.csv'
+filename = 'sample' + str(COMB) + '-sp-' + str(LEN) + '-inf.csv'
 
 def model_name(pi) :
-  return 'result-sp-' + str(LEN) + '-' + str(pi) + '.net'
+  return 'result' + str(COMB) + '-sp-' + str(LEN) + '-' + str(pi) + '.net'
 
 import numpy as np
 import pandas as pd
@@ -23,7 +23,7 @@ from chainer import serializers
 import random
 
 n_input = 74 ** COMB + 296
-n_hidden = 100
+n_hidden = 128
 n_output = 2
 
 models = []
@@ -36,7 +36,7 @@ for pi in range(34) :
     L.Linear(n_hidden, n_output)
   )
 
-  chainer.serializers.save_npz(model_name(pi), net)
+  chainer.serializers.load_npz(model_name(pi), net)
   models.append(net)
 
 # tp, fp, fn, tn
@@ -49,7 +49,6 @@ pos[(1, 0)] = 1 # fp
 pos[(1, 1)] = 0 # tp
 
 samples = set(random.sample(range(LINE), SIZE))
-print(samples)
 
 with open(filename) as f :
   line = f.readline().split(',')
@@ -64,9 +63,9 @@ with open(filename) as f :
     x = np.array(x).astype('float32')
 
     for pi in range(34) :
-      t = int(line[pi])
+      y = int(line[pi])
       with chainer.using_config('train', False), chainer.using_config('enable_backprop', False) :
-        y = np.argmax(models[pi](x).data)
+        t = np.argmax(models[pi](x).data)
 
         result[pi][pos[(t, y)]] += 1
       
