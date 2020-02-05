@@ -1,7 +1,7 @@
 # 2列用
 
 COUNT = float('inf')
-LEN = 5
+LEN = 0
 
 import os, re, csv
 from shanten import get_yuko
