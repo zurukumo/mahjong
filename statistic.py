@@ -1,4 +1,4 @@
-COMB = 1
+COMB = 2
 LEN = 10
 LINE = {0: 1670121, 5: 1640467, 10: 1092518}[LEN]
 SIZE = 80000
@@ -8,7 +8,6 @@ def model_name(pi) :
   return 'result' + str(COMB) + '-sp-' + str(LEN) + '-' + str(pi) + '.net'
 
 import numpy as np
-import pandas as pd
 import csv
 
 import chainer
@@ -72,9 +71,11 @@ with open(filename) as f :
     line = f.readline().split(',')
 
 e = 1e-10
-for pi in range(34) :
-  tp, fp, fn, tn = result[pi]
-  pre = tp / (tp + fp + e)
-  rec = tp / (tp + fn + e)
-  f1 = 2 * rec * pre / (rec + pre + e)
-  print(pi, tp, fp, fn, tn, pi, pre, rec, f1)
+with open('stats' + str(COMB) + '-' + str(LEN) + '.log', 'w') as f :
+  for pi in range(34) :
+    tp, fp, fn, tn = result[pi]
+    pre = tp / (tp + fp + e)
+    rec = tp / (tp + fn + e)
+    f1 = 2 * rec * pre / (rec + pre + e)
+    f.write('{} {} {} {} {} {} {} {}\n'.format(pi, tp, fp, fn, tn, pre, rec, f1))
+    print(pi, tp, fp, fn, tn, pre, rec, f1)
