@@ -1,5 +1,5 @@
 COMB = 2
-LEN = 10
+LEN = 0
 in_file = 'sample' + str(COMB) + '-sp-' + str(LEN) + '-'
 
 import numpy as np
@@ -54,10 +54,6 @@ for pi in range(34) :
 
   iteration = 0
 
-  # gpu = 0
-  # chainer.cuda.get_device(gpu).use()
-  # net.to_gpu(gpu)
-
   for epoch in range(n_epoch):
     # データセット並べ替えた順番を取得
     order = np.random.permutation(range(len(x_train)))
@@ -80,7 +76,6 @@ for pi in range(34) :
 
       loss_list.append(loss_train_batch.array)
       accuracy_list.append(accuracy_train_batch.array)
-
 
       # 勾配のリセットと勾配の計算
       net.cleargrads()
@@ -113,5 +108,4 @@ for pi in range(34) :
     #   f.write(ret + "\n")
     print('epoch:', epoch)
 
-  # net.to_cpu()
   chainer.serializers.save_npz('result' + str(COMB) + '-sp-' + str(LEN) + '-' + str(pi) + '.net', net)
