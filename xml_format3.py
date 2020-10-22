@@ -1,7 +1,7 @@
 # 2列用
 
 COUNT = float('inf')
-LEN = 0
+LEN = 10
 
 import os, re, csv
 from shanten import get_yuko
@@ -104,20 +104,20 @@ def xml_parse(filename) :
           continue
 
         out1 = [0] * 34 # 当たり牌
-        in1 = list() # 打牌順序
-        in2 = list() # 副露
+        in1 = set() # 打牌順序
+        in2 = set() # 副露
         for i in range(len(dahai[who])) :
-          for j in range(i + 1, len(dahai[who])) :
-            in1.append(dahai[who][i] * 74 + dahai[who][j])
+          for j in range(i + 1, min(i + 5, len(dahai[who]))) :
+            in1.add(dahai[who][i] * 74 + dahai[who][j])
         
         if 'm' in attr :
           for i in map(int, attr['m'].split(',')) :
-            in2.append(74 * 74 + huro_transform(i))
+            in2.add(74 * 74 + huro_transform(i))
 
         for i in get_yuko(tehai, [4] * 34, 0) :
           out1[i] = 1
 
-        with open('sample2-sp-' + str(LEN) + '-' + str(COUNT) + '.csv', 'a') as f :
+        with open('sample2-xp-' + str(LEN) + '-' + str(COUNT) + '.csv', 'a') as f :
           writer = csv.writer(f)
           writer.writerow(out1 + list(in1) + list(in2))
 

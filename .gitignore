@@ -1,9 +1,7 @@
 __pycache__
 .DS_Store
 xml2017
-old_sample
-trash
-*inf.csv
+*.csv
 *.zip
 *.net
 *.code-workspace
