@@ -1,38 +1,51 @@
-from chainer import Sequential
 from sklearn.model_selection import train_test_split
 import chainer.functions as F
 import chainer.links as L
 import chainer
 import numpy as np
 
+
+class Model(chainer.Chain):
+    def __init__(self):
+        super().__init__()
+        with self.init_scope():
+            self.conv1 = L.Convolution2D(
+                in_channels=None, out_channels=32, ksize=3, stride=1, pad=1)
+            self.conv2 = L.Convolution2D(
+                in_channels=None, out_channels=64, ksize=3, stride=1, pad=1)
+            self.conv3 = L.Convolution2D(
+                in_channels=None, out_channels=128, ksize=3, stride=1, pad=1)
+            self.conv4 = L.Convolution2D(
+                in_channels=None, out_channels=128, ksize=3, stride=1, pad=1)
+            self.fc5 = L.Linear(None, 1000)
+            self.fc6 = L.Linear(None, 2)
+
+    def forward(self, x):
+        h = F.relu(self.conv1(x.reshape((-1, 1, 5, 7))))
+        h = F.max_pooling_2d(h, ksize=2, stride=2)
+        h = F.relu(self.conv2(h))
+        h = F.max_pooling_2d(h, ksize=2, stride=2)
+        h = F.relu(self.conv3(h))
+        h = F.max_pooling_2d(h, ksize=2, stride=2)
+        h = F.relu(self.conv4(h))
+        h = F.relu(self.fc5(h))
+        return self.fc6(h)
+
+
 for pi in range(9):
     f = np.loadtxt('sample-{}.csv'.format(pi), delimiter=',')
     t, x = f[:, 0], f[:, 1:]
-    x = x.astype('float32')
     t = t.astype('int32')
-    x_train_val, x_test, t_train_val, t_test = train_test_split(
-        x, t, test_size=0.3)
-    x_train, x_val, t_train, t_val = train_test_split(
-        x_train_val, t_train_val, test_size=0.3)
+    x = x.astype('float32')
+    x_train, x_val, t_train, t_val = train_test_split(x, t, test_size=0.05)
 
     # net としてインスタンス化
-    n_input = 34
-    n_hidden = 40
-    n_output = 2
-
-    net = Sequential(
-        L.Linear(n_input, n_hidden), F.relu,
-        L.Linear(n_hidden, n_hidden), F.relu,
-        L.Linear(n_hidden, n_hidden), F.relu,
-        L.Linear(n_hidden, n_hidden), F.relu,
-        L.Linear(n_hidden, n_output)
-    )
-
+    model = Model()
     optimizer = chainer.optimizers.Adam()
-    optimizer.setup(net)
+    optimizer.setup(model)
 
-    n_epoch = 100
-    n_batchsize = 32
+    n_epoch = 200
+    n_batchsize = 1024
     iteration = 0
     for epoch in range(n_epoch):
         # データセット並べ替えた順番を取得
@@ -48,7 +61,7 @@ for pi in range(9):
             t_train_batch = t_train[index]
 
             # 予測値を出力
-            y_train_batch = net(x_train_batch)
+            y_train_batch = model(x_train_batch)
 
             # 目的関数を適用し、分類精度を計算
             loss_train_batch = F.softmax_cross_entropy(
@@ -59,7 +72,7 @@ for pi in range(9):
             accuracy_list.append(accuracy_train_batch.array)
 
             # 勾配のリセットと勾配の計算
-            net.cleargrads()
+            model.cleargrads()
             loss_train_batch.backward()
 
             # パラメータの更新
@@ -75,7 +88,7 @@ for pi in range(9):
         # 1エポック終えたら、検証データで評価
         # 検証データで予測値を出力
         with chainer.using_config('train', False), chainer.using_config('enable_backprop', False):
-            y_val = net(x_val)
+            y_val = model(x_val)
 
         # 目的関数を適用し、分類精度を計算
         loss_val = F.softmax_cross_entropy(y_val, t_val)
@@ -83,8 +96,32 @@ for pi in range(9):
         summary = F.classification_summary(y_val, t_val)
 
         # 結果の表示
-        ret = 'epoch:{}, iteration:{}, loss(train):{}, loss(valid):{}, acc(train):{}, acc(valid):{}, precision0:{}, precision1:{}, recall0:{}, recall1:{}, f1score0:{}, f1score1:{}'.format(
-            epoch, iteration, loss_train, loss_val.array, accuracy_train, accuracy_val.array, summary[0][0], summary[0][1], summary[1][0], summary[1][1], summary[2][0], summary[2][1])
-        print(ret)
+        print('epoch:{}, iteration:{}, loss(train):{}, loss(valid):{}, acc(train):{}, acc(valid):{}'.format(
+            epoch, iteration, loss_train, loss_val.array, accuracy_train, accuracy_val.array
+        ))
 
-    chainer.serializers.save_npz('result' + str(pi) + '.net', net)
+    # モデルを保存
+    chainer.serializers.save_npz('result' + str(pi) + '.net', model)
+
+    # 集計
+    # tp, fp, fn, tn
+    result = [0] * 4
+    # pos[(t, y)]
+    pos = dict()
+    pos[(0, 0)] = 3  # tn
+    pos[(0, 1)] = 2  # fn
+    pos[(1, 0)] = 1  # fp
+    pos[(1, 1)] = 0  # tp
+    for tt, yy in zip(t_val, model(x_val)):
+        result[pos[tt, np.argmax(yy.data)]] += 1
+        print(tt, yy.data, np.argmax(yy.data))
+
+    e = 1e-10
+    with open('stats.txt', 'a') as f:
+        tp, fp, fn, tn = result
+        pre = tp / (tp + fp + e)
+        rec = tp / (tp + fn + e)
+        f1 = 2 * rec * pre / (rec + pre + e)
+        f.write('{} {} {} {} {} {} {} {}\n'.format(
+            pi, tp, fp, fn, tn, pre, rec, f1))
+        print(pi, tp, fp, fn, tn, pre, rec, f1)

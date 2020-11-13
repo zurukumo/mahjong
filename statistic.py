@@ -6,15 +6,17 @@ import chainer.links as L
 import chainer.functions as F
 from chainer import Sequential
 
-n_input = 34
+n_input = 35
 n_hidden = 40
 n_output = 2
 
 model = []
 
-for pi in range(9):
+for pi in range(34):
     net = Sequential(
         L.Linear(n_input, n_hidden), F.relu,
+        L.Linear(n_hidden, n_hidden), F.relu,
+        L.Linear(n_hidden, n_hidden), F.relu,
         L.Linear(n_hidden, n_hidden), F.relu,
         L.Linear(n_hidden, n_hidden), F.relu,
         L.Linear(n_hidden, n_hidden), F.relu,
@@ -23,6 +25,8 @@ for pi in range(9):
 
     chainer.serializers.load_npz('result{}.net'.format(pi), net)
     model.append(net)
+
+print('model:', len(model))
 
 # tp, fp, fn, tn
 result = [[0] * 4 for _ in range(34)]
@@ -34,13 +38,16 @@ pos[(1, 0)] = 1  # fp
 pos[(1, 1)] = 0  # tp
 
 f = np.loadtxt('sample.csv', delimiter=',')
-x = f[:, 34:]
+t_all, x = f[:, :34], f[:, 34:]
+x = x[np.random.choice(x.shape[0], 50000, replace=False), :]
+t_all = t_all.astype('int32')
 x = x.astype('float32')
 
 a = defaultdict(int)
 b = defaultdict(int)
 
 for pi in range(9):
+    print('pi:', pi)
     t = f[:, pi]
     with chainer.using_config('train', False), chainer.using_config('enable_backprop', False):
         y = model[pi](x)
@@ -55,7 +62,7 @@ for pi in range(9):
 
 e = 1e-10
 with open('stats.txt', 'w') as f:
-    for pi in range(9):
+    for pi in range(34):
         tp, fp, fn, tn = result[pi]
         pre = tp / (tp + fp + e)
         rec = tp / (tp + fn + e)

@@ -1,8 +1,11 @@
 __pycache__
 .DS_Store
+xml2016
 xml2017
 *.csv
 *.zip
 *.net
 *.code-workspace
 ~*
+progress
+venv
