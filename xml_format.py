@@ -116,11 +116,8 @@ def xml_parse(filename):
 
                 doraHai = [pai_transform(int(i))
                            for i in attr['doraHai'].split(',')]
-                if len(doraHai) > 4:
-                    print(attr)
-                    input()
 
-                while len(doraHai) < 4:
+                while len(doraHai) < 5:
                     doraHai.append(MAX)
 
                 tehai = [0 for _ in range(34)]
@@ -144,8 +141,9 @@ def xml_parse(filename):
 def xml_format(year, output_file_name='output.json'):
     file_dir = './xml' + str(year)
     for filename in os.listdir(file_dir):
-        xml_parse(file_dir + '/' + filename)
         print(count, filename)
+        xml_parse(file_dir + '/' + filename)
 
 
+xml_format(2016)
 xml_format(2017)
