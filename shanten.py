@@ -17,15 +17,15 @@ def get_shanten_from_table(tehai):
     return shanten_table.get(tehai_decimal, [[0, 0]])
 
 
-def calc_shanten(tehai):
+def calc_shanten(tehai, n_huro):
     # 雀頭がないときの向聴数
-    min_shanten = get_temporary_shanten(tehai)
+    min_shanten = get_temporary_shanten(tehai, n_huro)
 
     # 雀頭がある場合の向聴数
     for i in range(0, 34):
         if tehai[i] >= 2:
             tehai[i] -= 2
-            min_shanten = min(min_shanten, get_temporary_shanten(tehai) - 1)
+            min_shanten = min(min_shanten, get_temporary_shanten(tehai, n_huro) - 1)
             tehai[i] += 2
 
     return min_shanten
@@ -33,8 +33,8 @@ def calc_shanten(tehai):
 # 一般手の一時的な向聴数の計算
 
 
-def get_temporary_shanten(tehai):
-    b = (13 - sum(tehai)) // 3
+def get_temporary_shanten(tehai, n_huro):
+    b = (13 - sum(tehai) - n_huro * 3) // 3
     m = get_shanten_from_table(tehai[0:9])
     p = get_shanten_from_table(tehai[9:18])
     s = get_shanten_from_table(tehai[18:27])
@@ -50,7 +50,7 @@ def get_temporary_shanten(tehai):
     min_shanten = 8
 
     for m, p, s in itertools.product(m, p, s):
-        n_mentsu = b + m[0] + p[0] + s[0] + z[0]
+        n_mentsu = b + m[0] + p[0] + s[0] + z[0] + n_huro
         n_tatsu = m[1] + p[1] + s[1] + z[1]
 
         # 塔子オーバー時の補正
@@ -97,15 +97,15 @@ def calc_shanten13(tehai):
 # 牌番号がny以上の有効牌を返す関数
 
 
-def get_yuko(jun, rest, ny):
+def get_yuko(jun, rest, n_huro=0, ny=0):
     yuko = []
 
-    n_shanten = calc_shanten(jun)
+    n_shanten = calc_shanten(jun, n_huro)
 
     for i in range(ny, 34):
         if rest[i] > 0:
             jun[i] += 1
-            if calc_shanten(jun) < n_shanten:
+            if calc_shanten(jun, n_huro) < n_shanten:
                 yuko.append(i)
             jun[i] -= 1
 
@@ -127,3 +127,21 @@ def get_muko(jun, nm):
             jun[i] += 1
 
     return muko
+
+
+# 待ち牌を返す関数
+def get_machi(jun, rest, n_huro=0):
+    machi = []
+
+    for i in range(34):
+        if rest[i] > 0:
+            jun[i] += 1
+            if calc_shanten(jun, n_huro) == -1:
+                machi.append(i)
+            elif n_huro == 0 and calc_shanten7(jun) == -1:
+                machi.append(i)
+            elif n_huro == 0 and calc_shanten13(jun) == -1:
+                machi.append(i)
+            jun[i] -= 1
+
+    return machi
