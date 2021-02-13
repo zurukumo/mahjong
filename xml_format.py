@@ -138,7 +138,7 @@ def xml_parse(filename):
                         sys.exit()
 
 
-def xml_format(year, output_file_name='output.json'):
+def xml_format(year):
     file_dir = './xml' + str(year)
     for filename in os.listdir(file_dir):
         print(count, filename)

@@ -1,134 +1,135 @@
-# 2列用
+import csv
+import re
+import os
+from random import randint
 
-COUNT = float('inf')
-LEN = 0
 
-import os, re, csv
-from shanten import get_yuko
+class XMLFormat():
+    def __init__(self, years, output, count):
+        self.count = 0
+        self.output = output
+        for year in years:
+            file_dir = './xml' + str(year)
+            for filename in os.listdir(file_dir):
+                self.filename = filename
+                self.ts = -1
+                self.xml_parse(file_dir + '/' + filename)
+                self.count += 1
+                print(self.count, filename)
+                if self.count == count:
+                    return
 
-def pai_transform(x) :
-  if x == 16 : return 34
-  elif x == 52 : return 35
-  elif x == 88 : return 36
-  else : return x // 4
+    def url(self):
+        return 'https://tenhou.net/0/?log={}&ts={}'.format(self.filename.replace('.xml', ''), self.ts)
 
-def bit_sum(m) :
-  return sum([m[i] * (2 ** i) for i in range(len(m))])
+    def jpnc(self, c):
+        return ['1m', '2m', '3m', '4m', '5m', '6m', '7m', '8m', '9m',
+                '1p', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p',
+                '1s', '2s', '3s', '4s', '5s', '6s', '7s', '8s', '9s',
+                '東', '南', '西', '北', '白', '発', '中'][c]
 
-def huro_transform(m) :
-  CHI = 2 * 3 * 21
-  PON = 2 * 34
-  b = []
-  for i in range(0, 16) :
-    b.append(m % 2)
-    m = m // 2
+    def jpns(self, s):
+        return [self.jpnc(c) for c in s]
 
-  who = b[0] + b[1] * 2
+    def pai(self, x):
+        return x // 4
 
-  if who == 0 :		
-  #暗槓
-    return CHI + PON + bit_sum(b[8:16]) // 3
-  
-  else :
-    #順子
-    if b[2] == 1 :
-      ret = 0
-      tmp = bit_sum(b[10:16])
-      ret += tmp
-      tmp = (tmp // 3) % 7
-      # 赤あり
-      if tmp == 2 and bit_sum(b[7:9]) == 0 :
-          ret += 63
-      elif tmp == 3 and bit_sum(b[5:7]) == 0 :
-          ret += 63
-      elif tmp == 4 and bit_sum(b[3:5]) == 0 :
-          ret += 63
+    def b(self, m):
+        return sum([m[i] * (2 ** i) for i in range(len(m))])
 
-      return ret
+    def m(self, who, m):
+        b = []
+        for _ in range(0, 16):
+            b.append(m % 2)
+            m = m // 2
 
-    #明刻
-    elif b[3] == 1 :
-      ret = CHI
-      tmp = bit_sum(b[9:16]) // 3
-      ret += tmp
-      # 赤あり
-      if tmp in [4, 13, 22] and bit_sum(b[5:7]) != 0 :
-          ret += 34
-      return ret
+        from_who = self.b(b[0:2])
 
-    #加槓
-    elif b[4] == 1 :
-      return CHI + PON + 34 + bit_sum(b[9:16]) // 3
-  
-    #明槓
-    else :
-      return CHI + PON + 68 + bit_sum(b[8:16]) // 4
+        if from_who == 0:
+            # 暗槓
+            for _ in range(4):
+                self.huro[who].append(self.b(b[8:16]) // 4)
+            # self.huro_type[who][3] += 1
 
-def xml_parse(filename) :
-  with open(filename, 'r') as xml :
-    for elem, attr in re.findall(r'<(.*?)[ /](.*?)/?>', xml.read()) :
-      attr = dict(re.findall(r'\s?(.*?)="(.*?)"', attr))
-      if elem == 'INIT' :
-        tsumo = [[] for _ in range(4)]
-        dahai = [[] for _ in range(4)]
-        huro = [[] for _ in range(4)]
-    
-      # ツモ情報
-      elif re.match(r'[T|U|V|W][0-9]+', elem) :
-        idx = {'T': 0, 'U': 1, 'V': 2, 'W': 3}
-        who = idx[elem[0]]
-        pai = int(elem[1:])
-        tsumo[who].append(pai_transform(pai))
+        else:
+            # 順子
+            if b[2] == 1:
+                x = self.b(b[10:16]) // 3
+                x += (x // 7) * 2
+                for i in range(3):
+                    self.huro[who].append(x + i)
+                # self.huro_type[who][0] += 1
 
-      # 打牌情報
-      elif re.match(r'[D|E|F|G][0-9]+', elem) :
-        idx = {'D': 0, 'E': 1, 'F': 2, 'G': 3}
-        who = idx[elem[0]]
-        pai = int(elem[1:])
-        # 手出し
-        if len(tsumo[who]) != 0 and tsumo[who][-1] != pai :
-          dahai[who].append(pai_transform(pai))
-        # ツモ切り
-        else :
-          dahai[who].append(pai_transform(pai) + 37)
+            # 明刻
+            elif b[2] == 0 and b[3] == 1:
+                for _ in range(3):
+                    self.huro[who].append(self.b(b[9:16]) // 3)
+                # self.huro_type[who][1] += 1
 
-      elif elem == 'AGARI' :
-        who = int(attr['who'])
-        tehai = [0 for _ in range(34)]
-        machi = int(attr['machi'])
-        for i in map(int, attr['hai'].split(',')) :
-          if i != machi :
-            tehai[i // 4] += 1
-        
-        if len(dahai[who]) < LEN :
-          continue
+            # 加槓
+            elif b[2] == 0 and b[4] == 1:
+                self.huro[who].append(self.b(b[9:16]) // 3)
+                # self.huro_type[who][2] += 1
+                # self.huro_type[who][1] -= 1
 
-        out1 = [0] * 34 # 当たり牌
-        in1 = list() # 打牌順序
-        in2 = list() # 副露
-        for i in range(len(dahai[who])) :
-          for j in range(i + 1, len(dahai[who])) :
-            in1.append(dahai[who][i] * 74 + dahai[who][j])
-        
-        if 'm' in attr :
-          for i in map(int, attr['m'].split(',')) :
-            in2.append(74 * 74 + huro_transform(i))
+            # 大明槓
+            else:
+                for _ in range(4):
+                    self.huro[who].append(self.b(b[8:16]) // 4)
+                # self.huro_type[who][2] += 1
 
-        for i in get_yuko(tehai, [4] * 34, 0) :
-          out1[i] = 1
+    def xml_parse(self, filename):
+        with open(filename, 'r') as xml:
+            for elem, attr in re.findall(r'<(.*?)[ /](.*?)/?>', xml.read()):
+                attr = dict(re.findall(r'\s?(.*?)="(.*?)"', attr))
 
-        with open('sample2-sp-' + str(LEN) + '-' + str(COUNT) + '.csv', 'a') as f :
-          writer = csv.writer(f)
-          writer.writerow(out1 + list(in1) + list(in2))
+                # 開局
+                if elem == 'INIT':
+                    self.ts += 1
+                    self.dahai = [[0] * 34 for _ in range(4)]
+                    self.reach = [[0] * 34 for _ in range(4)]
+                    self.huro = [[0] * 34 for _ in range(4)]
 
-def xml_format(year, output_file_name='output.json') :
-  file_dir = './xml' + str(year)
-  count = 0
-  for filename in os.listdir(file_dir) :
-    count += 1
-    xml_parse(file_dir + '/' + filename)
-    print(count, filename)
-    if count == COUNT :
-      break
+                # 打牌
+                elif re.match(r'[D|E|F|G][0-9]+', elem):
+                    idx = {'D': 0, 'E': 1, 'F': 2, 'G': 3}
+                    who = idx[elem[0]]
+                    pai = int(elem[1:])
+                    self.dahai[who][self.pai(pai)] += 1
 
-xml_format(2017)
+                elif elem == 'N':
+                    who = int(attr['who'])
+                    print(self.m(who, int(attr['m'])))
+
+                # リーチ成立
+                elif elem == 'REACH' and attr['step'] == '2':
+                    who = int(attr['who'])
+                    self.reach[who][self.dahai[who][-1]] = 1
+
+                # 和了
+                elif elem == 'AGARI':
+                    who = int(attr['who'])
+                    self.who = who
+                    # with open(self.output, 'a') as f:
+                    #     writer = csv.writer(f)
+                    #     # out -> 34, in -> 87
+                    #     writer.writerow(
+                    #         self.machi(attr) +  # 34
+                    #         self.n_pai_all() +  # 34
+                    #         self.n_dahai() +  # 34
+                    #         self.n_huro() +  # 34
+                    #         self.n_mpsz() +  # 4
+                    #         self.n_mpsz_of_first_6pais() +  # 4
+                    #         self.n_dist() +  # 5
+                    #         self.n_dist_of_first_6pais() +  # 5
+                    #         self.is_suzi() +  # 27
+                    #         self.reach[who] +   # 34
+                    #         self.huro_type[who]  # 34
+                    #     )
+
+
+XMLFormat(
+    years=[2016, 2017],
+    output='data2.csv',
+    count=float('inf')
+)
