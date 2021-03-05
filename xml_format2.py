@@ -5,19 +5,15 @@ from random import randint
 
 
 class XMLFormat():
-    def __init__(self, years, output, count):
+    def __init__(self, years, output_file):
         self.count = 0
-        self.output = output
+        self.output_file = output_file
         for year in years:
             file_dir = './xml' + str(year)
             for filename in os.listdir(file_dir):
                 self.filename = filename
                 self.ts = -1
                 self.xml_parse(file_dir + '/' + filename)
-                self.count += 1
-                print(self.count, filename)
-                if self.count == count:
-                    return
 
     def url(self):
         return 'https://tenhou.net/0/?log={}&ts={}'.format(self.filename.replace('.xml', ''), self.ts)
@@ -47,8 +43,8 @@ class XMLFormat():
 
         if from_who == 0:
             # 暗槓
-            for _ in range(4):
-                self.huro[who].append(self.b(b[8:16]) // 4)
+            self.huro[who][self.b(b[8:16]) // 4] += 4
+            self.tehai[who][self.b(b[8:16]) // 4] -= 4
             # self.huro_type[who][3] += 1
 
         else:
@@ -57,26 +53,42 @@ class XMLFormat():
                 x = self.b(b[10:16]) // 3
                 x += (x // 7) * 2
                 for i in range(3):
-                    self.huro[who].append(x + i)
+                    self.huro[who][x + i] += 1
+                    self.tehai[who][x + i] -= 1
+                self.tehai[who][self.last_dahai] += 1
                 # self.huro_type[who][0] += 1
 
             # 明刻
             elif b[2] == 0 and b[3] == 1:
-                for _ in range(3):
-                    self.huro[who].append(self.b(b[9:16]) // 3)
+                self.huro[who][self.b(b[9:16]) // 3] += 3
+                self.tehai[who][self.b(b[9:16]) // 3] -= 3
+                self.tehai[who][self.last_dahai] += 1
                 # self.huro_type[who][1] += 1
 
             # 加槓
             elif b[2] == 0 and b[4] == 1:
-                self.huro[who].append(self.b(b[9:16]) // 3)
+                self.huro[who][self.b(b[9:16]) // 3] += 1
                 # self.huro_type[who][2] += 1
                 # self.huro_type[who][1] -= 1
 
             # 大明槓
             else:
-                for _ in range(4):
-                    self.huro[who].append(self.b(b[8:16]) // 4)
+                self.huro[who][self.b(b[8:16]) // 4] += 4
+                self.tehai[who][self.b(b[8:16]) // 4] -= 4
+                self.tehai[who][self.last_dahai] += 1
                 # self.huro_type[who][2] += 1
+
+    def output(self, who, y):
+        with open(self.output_file, 'a') as f:
+            writer = csv.writer(f)
+            # out -> 34, in -> 87
+            x = [y]
+            x += self.tehai[who]
+            for i in range(who, who + 4):
+                i = i % 4
+                x += self.dahai[i]
+                x += self.huro[i]
+            writer.writerow(x)
 
     def xml_parse(self, filename):
         with open(filename, 'r') as xml:
@@ -87,49 +99,52 @@ class XMLFormat():
                 if elem == 'INIT':
                     self.ts += 1
                     self.dahai = [[0] * 34 for _ in range(4)]
+                    self.tehai = [[0] * 34 for _ in range(4)]
                     self.reach = [[0] * 34 for _ in range(4)]
                     self.huro = [[0] * 34 for _ in range(4)]
+                    self.last_dahai = -1
+
+                    for player in range(4):
+                        for p in map(int, attr['hai' + str(player)].split(',')):
+                            self.tehai[player][self.pai(int(p))] += 1
+
+                # ツモ
+                elif re.match(r'[T|U|V|W][0-9]+', elem):
+                    idx = {'T': 0, 'U': 1, 'V': 2, 'W': 3}
+                    who = idx[elem[0]]
+                    pai = int(elem[1:])
+                    self.tehai[who][self.pai(pai)] += 1
 
                 # 打牌
                 elif re.match(r'[D|E|F|G][0-9]+', elem):
                     idx = {'D': 0, 'E': 1, 'F': 2, 'G': 3}
                     who = idx[elem[0]]
                     pai = int(elem[1:])
+                    if randint(1, 50) == 1:
+                        self.output(who, self.pai(pai))
+                        self.count += 1
+                        if self.count == 2000000:
+                            exit()
                     self.dahai[who][self.pai(pai)] += 1
+                    self.tehai[who][self.pai(pai)] -= 1
+                    self.last_dahai = self.pai(pai)
 
                 elif elem == 'N':
                     who = int(attr['who'])
-                    print(self.m(who, int(attr['m'])))
+                    self.m(who, int(attr['m']))
 
                 # リーチ成立
                 elif elem == 'REACH' and attr['step'] == '2':
                     who = int(attr['who'])
-                    self.reach[who][self.dahai[who][-1]] = 1
+                    self.reach[who][self.dahai[who][-1]] = 4
 
                 # 和了
                 elif elem == 'AGARI':
                     who = int(attr['who'])
                     self.who = who
-                    # with open(self.output, 'a') as f:
-                    #     writer = csv.writer(f)
-                    #     # out -> 34, in -> 87
-                    #     writer.writerow(
-                    #         self.machi(attr) +  # 34
-                    #         self.n_pai_all() +  # 34
-                    #         self.n_dahai() +  # 34
-                    #         self.n_huro() +  # 34
-                    #         self.n_mpsz() +  # 4
-                    #         self.n_mpsz_of_first_6pais() +  # 4
-                    #         self.n_dist() +  # 5
-                    #         self.n_dist_of_first_6pais() +  # 5
-                    #         self.is_suzi() +  # 27
-                    #         self.reach[who] +   # 34
-                    #         self.huro_type[who]  # 34
-                    #     )
 
 
 XMLFormat(
     years=[2016, 2017],
-    output='data2.csv',
-    count=float('inf')
+    output_file='data.csv'
 )

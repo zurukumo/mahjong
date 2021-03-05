@@ -1,8 +1,6 @@
 __pycache__
 .DS_Store
-xml2015
-xml2016
-xml2017
+xml*
 *.csv
 *.zip
 *.net
@@ -10,3 +8,4 @@ xml2017
 ~*
 progress
 venv
+*.npz
