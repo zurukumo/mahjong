@@ -53,7 +53,7 @@ class CNN(Chain):
         return h
 
 
-epoch = 1000
+epoch = 800
 batch_size = 256
 frequency = -1
 
@@ -71,7 +71,7 @@ optimizer.setup(model)
 # データ準備
 x = []
 t = []
-with open('data-0.csv') as f:
+with open('richi-0.csv') as f:
     reader = csv.reader(f, delimiter=",")
     for row in reader:
         row = list(map(int, row))
