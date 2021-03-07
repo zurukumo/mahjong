@@ -1,3 +1,4 @@
+
 import csv
 
 import chainer
@@ -9,11 +10,17 @@ from chainer.datasets import TupleDataset
 from chainer.training import extensions
 from sklearn.model_selection import train_test_split
 
-# モデル準備
+
+file_name = 'richi'
+n_output = 2
+
+epoch = 150
+batch_size = 256
+frequency = -1
 
 
 class CNN(Chain):
-    def __init__(self):
+    def __init__(self, n_output):
         super(CNN, self).__init__()
         with self.init_scope():
             ksize = (5, 2)
@@ -24,7 +31,7 @@ class CNN(Chain):
             self.bnorm2 = L.BatchNormalization(100)
             self.bnorm3 = L.BatchNormalization(100)
             self.fc1 = L.Linear(None, 300)
-            self.fc2 = L.Linear(None, 34)
+            self.fc2 = L.Linear(None, n_output)
 
     def __call__(self, x):
         # 1層
@@ -53,11 +60,7 @@ class CNN(Chain):
         return h
 
 
-epoch = 800
-batch_size = 256
-frequency = -1
-
-model = L.Classifier(CNN())
+model = L.Classifier(CNN(n_output=n_output))
 # serializers.load_npz("mymodel.npz", model)
 
 gpu_device = 0
@@ -71,13 +74,13 @@ optimizer.setup(model)
 # データ準備
 x = []
 t = []
-with open('richi-0.csv') as f:
+with open(file_name + '.csv') as f:
     reader = csv.reader(f, delimiter=",")
     for row in reader:
         row = list(map(int, row))
         tt, row = row[0], row[1:]
         xx = []
-        for i in range(9):
+        for i in range(len(row) // 34):
             xxx = []
             for j in range(34):
                 xxx.append([1 if row[i * 34 + j] >= k else 0 for k in range(1, 5)])
@@ -115,4 +118,4 @@ trainer.extend(extensions.PrintReport(
 
 trainer.run()
 
-serializers.save_npz("mymodel.npz", model)
+serializers.save_npz(file_name + '.npz', model)

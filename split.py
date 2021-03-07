@@ -1,5 +1,5 @@
-IN_FILE = 'richi.csv'
-OUT_FILE = 'richi-{}.csv'
+IN_FILE = 'pon.csv'
+OUT_FILE = 'pon-{}.csv'
 
 N_SPLIT = 800000
 
