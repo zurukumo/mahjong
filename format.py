@@ -233,63 +233,64 @@ class Format():
             if self.debug:
                 print(self.url())
 
+                dx = []
+                for i in range(len(x) // 34):
+                    dx.append(x[i * 34 + 1:(i + 1) * 34 + 1])
+
                 debug = ''
-                for i in range(34):
-                    for _ in range(self.tehai[who][i]):
-                        debug += self.jp(i)
+                for tehai in dx[:1]:
+                    for i in range(34):
+                        debug += self.jp(i) * tehai[i]
                 print('手牌:', debug)
 
                 debug = ''
-                for i in range(34):
-                    if self.aka[who][i] == 4:
-                        debug += self.jp(i)
+                for aka in dx[1:2]:
+                    for i in range(34):
+                        debug += self.jp(i) * aka[i]
                 print('赤牌:', debug)
 
-                for n in range(who, who + 4):
-                    n = n % 4
+                for kawa in dx[2:6]:
                     debug = ''
                     for i in range(34):
-                        for _ in range(self.kawa[n][i]):
-                            debug += self.jp(i)
+                        debug += self.jp(i) * kawa[i]
                     print('河:', debug)
 
-                for n in range(who, who + 4):
-                    n = n % 4
+                for huro in dx[6:10]:
                     debug = ''
                     for i in range(34):
-                        for _ in range(self.huro[n][i]):
-                            debug += self.jp(i)
+                        debug += self.jp(i) * huro[i]
                     print('副露:', debug)
 
                 debug = ''
-                for i in range(34):
-                    for _ in range(self.dora[i]):
-                        debug += self.jp(i)
+                for dora in dx[10:11]:
+                    for i in range(34):
+                        debug += self.jp(i) * dora[i]
                 print('ドラ:', debug)
 
-                for n in range(who + 1, who + 4):
-                    n = n % 4
+                for richi in dx[11:14]:
                     debug = ''
                     for i in range(34):
-                        if self.richi[n][i] == 4:
-                            debug += self.jp(i)
+                        debug += self.jp(i) * richi[i]
                     print('リーチ:', debug)
 
                 debug = ''
-                for i in range(34):
-                    if self.bakaze[i] == 4:
-                        debug += self.jp(i)
+                for bakaze in dx[14:15]:
+                    for i in range(34):
+                        debug += self.jp(i) * bakaze[i]
                 print('場風:', debug)
 
                 debug = ''
-                for i in range(34):
-                    if self.zikaze[who][i] == 4:
-                        debug += self.jp(i)
+                for zikaze in dx[15:16]:
+                    for i in range(34):
+                        debug += self.jp(i) * zikaze[i]
                 print('自風:', debug)
 
                 debug = ''
-                debug += self.jp(self.last_dahai)
+                for last_dahai in dx[16:17]:
+                    for i in range(34):
+                        debug += self.jp(i) * last_dahai[i]
                 print('最後の打牌:', debug)
+
                 print('結果:', self.jp(y) if self.mode == Format.DAHAI_MODE else y)
                 input()
 
