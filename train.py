@@ -10,11 +10,18 @@ from chainer.datasets import TupleDataset
 from chainer.training import extensions
 from sklearn.model_selection import train_test_split
 
+model = 'chi'
 
-file_name = 'richi'
-n_output = 2
+if model == 'dahai':
+    file_name, n_output = model, 34
+if model == 'richi':
+    file_name, n_output = model, 2
+if model == 'pon':
+    file_name, n_output = model, 2
+if model == 'chi':
+    file_name, n_output = model, 4
 
-epoch = 150
+epoch = 200
 batch_size = 256
 frequency = -1
 
@@ -67,7 +74,7 @@ gpu_device = 0
 chainer.cuda.get_device_from_id(0)
 model.to_gpu()
 
-optimizer = chainer.optimizers.Adam()
+optimizer = chainer.optimizers.Adam(alpha=0.0001)
 optimizer.setup(model)
 
 
