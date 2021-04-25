@@ -204,14 +204,27 @@ class Format():
             x = [y]
             # 手牌(1)
             x += self.tehai[who]
-            # 捨て牌(4)
+            # 赤(1)
+            x += self.aka[who]
+            # 河(4)
             for i in range(who, who + 4):
                 i = i % 4
-                x += self.dahai[i]
-            # 副露牌(4)
+                x += self.kawa[i]
+            # 副露(4)
             for i in range(who, who + 4):
                 i = i % 4
                 x += self.huro[i]
+            # ドラ(1)
+            x += self.dora
+            # リーチ(3)
+            for i in range(who + 1, who + 4):
+                i = i % 4
+                x += self.richi[i]
+            # 場風(1)
+            x += self.bakaze
+            # 自風(1)
+            x += self.zikaze[who]
+
             # 最後の打牌(1)
             x += [4 if i == self.last_dahai else 0 for i in range(34)]
             writer.writerow(x)
@@ -219,20 +232,27 @@ class Format():
             # デバッグ開始
             if self.debug:
                 print(self.url())
+
                 debug = ''
                 for i in range(34):
                     for _ in range(self.tehai[who][i]):
                         debug += self.jp(i)
                 print('手牌:', debug)
-                print()
+
+                debug = ''
+                for i in range(34):
+                    if self.aka[who][i] == 4:
+                        debug += self.jp(i)
+                print('赤牌:', debug)
+
                 for n in range(who, who + 4):
                     n = n % 4
                     debug = ''
                     for i in range(34):
-                        for _ in range(self.dahai[n][i]):
+                        for _ in range(self.kawa[n][i]):
                             debug += self.jp(i)
-                    print('捨て牌:', debug)
-                print()
+                    print('河:', debug)
+
                 for n in range(who, who + 4):
                     n = n % 4
                     debug = ''
@@ -240,7 +260,33 @@ class Format():
                         for _ in range(self.huro[n][i]):
                             debug += self.jp(i)
                     print('副露:', debug)
-                print()
+
+                debug = ''
+                for i in range(34):
+                    for _ in range(self.dora[i]):
+                        debug += self.jp(i)
+                print('ドラ:', debug)
+
+                for n in range(who + 1, who + 4):
+                    n = n % 4
+                    debug = ''
+                    for i in range(34):
+                        if self.richi[n][i] == 4:
+                            debug += self.jp(i)
+                    print('リーチ:', debug)
+
+                debug = ''
+                for i in range(34):
+                    if self.bakaze[i] == 4:
+                        debug += self.jp(i)
+                print('場風:', debug)
+
+                debug = ''
+                for i in range(34):
+                    if self.zikaze[who][i] == 4:
+                        debug += self.jp(i)
+                print('自風:', debug)
+
                 debug = ''
                 debug += self.jp(self.last_dahai)
                 print('最後の打牌:', debug)
@@ -263,16 +309,29 @@ class Format():
                 # 開局
                 if elem == 'INIT':
                     self.ts += 1
-                    self.dahai = [[0] * 34 for _ in range(4)]
                     self.tehai = [[0] * 34 for _ in range(4)]
-                    self.richi = [[0] * 34 for _ in range(4)]
+                    self.aka = [[0] * 34 for _ in range(4)]
+                    self.kawa = [[0] * 34 for _ in range(4)]
                     self.huro = [[0] * 34 for _ in range(4)]
                     self.huro_type = [[0] * 4 for _ in range(4)]
-                    self.last_dahai = -1
+                    self.dora = [0] * 34
+                    self.richi = [[0] * 34 for _ in range(4)]
+                    self.bakaze = [0] * 34
+                    self.zikaze = [[0] * 34 for _ in range(4)]
 
-                    for player in range(4):
-                        for p in map(int, attr['hai' + str(player)].split(',')):
-                            self.tehai[player][self.pai(int(p))] += 1
+                    for who in range(4):
+                        for pai in map(int, attr['hai' + str(who)].split(',')):
+                            self.tehai[who][self.pai(pai)] += 1
+                            if pai in [16, 52, 88]:
+                                self.aka[who][self.pai(pai)] = 4
+
+                    kyoku, honba, kyotaku, _, _, dora = map(int, attr['seed'].split(','))
+                    self.dora[self.pai(dora)] += 1
+                    self.bakaze[27 + kyoku // 4] = 4
+                    for who in range(4):
+                        self.zikaze[who][27 + (who - kyoku) % 4] = 4
+
+                    self.last_dahai = -1
 
                 # ツモ
                 elif re.match(r'[T|U|V|W][0-9]+', elem):
@@ -280,6 +339,8 @@ class Format():
                     who = idx[elem[0]]
                     pai = int(elem[1:])
                     self.tehai[who][self.pai(pai)] += 1
+                    if pai in [16, 52, 88]:
+                        self.aka[who][self.pai(pai)] = 4
 
                     # リーチの抽出
                     if self.mode == Format.RICHI_MODE:
@@ -292,11 +353,11 @@ class Format():
                     pai = self.pai(int(elem[1:]))
 
                     # 打牌の抽出
-                    if self.mode == Format.DAHAI_MODE and randint(1, 50) == 1:
+                    if self.mode == Format.DAHAI_MODE and sum(self.richi[who]) == 0 and randint(1, 50) == 1:
                         self.output(who, pai)
 
                     # 打牌の処理
-                    self.dahai[who][pai] += 1
+                    self.kawa[who][pai] += 1
                     self.tehai[who][pai] -= 1
                     self.last_dahai = pai
 
@@ -316,7 +377,11 @@ class Format():
                 # リーチ成立
                 elif elem == 'REACH' and attr['step'] == '2':
                     who = int(attr['who'])
-                    self.richi[who][self.dahai[who][-1]] = 4
+                    self.richi[who][self.last_dahai] = 4
+
+                elif elem == 'DORA':
+                    pai = self.pai(int(attr['hai']))
+                    self.dora[pai] += 1
 
                 # 和了
                 elif elem == 'AGARI':
@@ -327,6 +392,6 @@ class Format():
 Format(
     years=[2016, 2017],
     mode=Format.RICHI_MODE,
-    max_count=800000,
+    max_count=500000,
     debug=False
 )
