@@ -7,5 +7,5 @@ xml*
 *.code-workspace
 ~*
 progress
-venv
+.venv
 *.npz
