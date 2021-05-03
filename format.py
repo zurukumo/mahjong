@@ -2,7 +2,7 @@ import csv
 import re
 import os
 from random import randint
-from shanten import calc_shanten
+from shanten import calc_shanten, get_yuko
 
 
 class Format():
@@ -10,7 +10,9 @@ class Format():
     RICHI_MODE = 1
     PON_MODE = 2
     CHI_MODE = 3
-    KAN_MODE = 4
+    ANKAN_MODE = 4
+    KAKAN_MODE = 5
+    MINKAN_MODE = 6
 
     SHUNTSU_TYPE = 0
     MINKO_TYPE = 1
@@ -61,9 +63,11 @@ class Format():
 
     def sample_richi(self, who):
         elem, _ = self.actions[self.action_i + 1]
+
         # リーチ中
         if sum(self.richi[who]) >= 1:
             return
+
         # 暗槓以外の副露をしている
         n_huro = sum(self.huro_type[who])
         n_ankan = self.huro_type[who][Format.ANKAN_TYPE]
@@ -79,6 +83,46 @@ class Format():
                     return
                 y = 0
             self.output(who, y)
+
+    def sample_ankan(self, who):
+        elem, attr = self.actions[self.action_i + 1]
+        attr = dict(re.findall(r'\s?(.*?)="(.*?)"', attr))
+
+        # リーチ中
+        if sum(self.richi[who]) >= 1:
+            if self.tehai[who][self.last_tsumo] != 4:
+                return
+
+            tmp_tehai = self.tehai[who][::]
+            n_huro = sum(self.huro_type[who])
+
+            tmp_tehai[self.last_tsumo] = 3
+            shanten1 = calc_shanten(tmp_tehai, n_huro)
+            machi1 = get_yuko(tmp_tehai, [4] * 34, n_huro=n_huro)
+
+            tmp_tehai[self.last_tsumo] = 0
+            n_huro += 1
+            shanten2 = calc_shanten(tmp_tehai, n_huro)
+            machi2 = get_yuko(tmp_tehai, [4] * 34, n_huro=n_huro)
+
+            if shanten1 != shanten2 or machi1 != machi2:
+                return
+
+            if elem == 'N' and self.is_ankan(int(attr['m'])):
+                self.output(who, 1)
+            else:
+                self.output(who, 0)
+
+        # リーチ中じゃない
+        else:
+            for i in range(34):
+                if self.tehai[who][i] != 4:
+                    continue
+
+                if elem == 'N' and self.is_ankan(int(attr['m'])):
+                    self.output(who, 1)
+                else:
+                    self.output(who, 0)
 
     def sample_pon(self, pai, who):
         elem, attr = self.actions[self.action_i + 1]
@@ -198,8 +242,12 @@ class Format():
             output_file = 'pon.csv'
         elif self.mode == Format.CHI_MODE:
             output_file = 'chi.csv'
-        elif self.mode == Format.KAN_MODE:
-            output_file = 'kan.csv'
+        elif self.mode == Format.ANKAN_MODE:
+            output_file = 'ankan.csv'
+        elif self.mode == Format.KAKAN_MODE:
+            output_file = 'kakan.csv'
+        elif self.mode == Format.MINKAN_MODE:
+            output_file = 'minkan.csv'
 
         with open(output_file, 'a') as f:
             writer = csv.writer(f)
@@ -335,19 +383,26 @@ class Format():
                         self.zikaze[who][27 + (who - kyoku) % 4] = 4
 
                     self.last_dahai = -1
+                    self.last_tsumo = -1
 
                 # ツモ
                 elif re.match(r'[T|U|V|W][0-9]+', elem):
                     idx = {'T': 0, 'U': 1, 'V': 2, 'W': 3}
                     who = idx[elem[0]]
-                    pai = int(elem[1:])
-                    self.tehai[who][self.pai(pai)] += 1
+                    pai = self.pai(int(elem[1:]))
+
+                    self.tehai[who][pai] += 1
                     if pai in [16, 52, 88]:
-                        self.aka[who][self.pai(pai)] = 4
+                        self.aka[who][pai] = 4
+                    self.last_tsumo = pai
 
                     # リーチの抽出
                     if self.mode == Format.RICHI_MODE:
                         self.sample_richi(who)
+
+                    # 暗槓の抽出
+                    if self.mode == Format.ANKAN_MODE:
+                        self.sample_ankan(who)
 
                 # 打牌
                 elif re.match(r'[D|E|F|G][0-9]+', elem):
@@ -394,7 +449,7 @@ class Format():
 
 Format(
     years=[2016, 2017],
-    mode=Format.RICHI_MODE,
+    mode=Format.ANKAN_MODE,
     max_count=500000,
     debug=False
 )
