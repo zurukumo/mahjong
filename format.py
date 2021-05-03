@@ -121,7 +121,9 @@ class Format():
                 y = ((int(attr['m']) & 0xFC00) >> 10) % 3 + 1
             else:
                 y = 0
-            self.output(i, y)
+
+            if y != 0 or randint(1, 4) == 1:
+                self.output(i, y)
 
     def m(self, who, m):
         if self.is_ankan(m):
