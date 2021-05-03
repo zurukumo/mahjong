@@ -10,11 +10,17 @@ from chainer.datasets import TupleDataset
 from chainer.training import extensions
 from sklearn.model_selection import train_test_split
 
-model = 'chi'
+model = 'ankan'
 
 if model == 'dahai':
     file_name, n_output = model, 34
 if model == 'richi':
+    file_name, n_output = model, 2
+if model == 'ankan':
+    file_name, n_output = model, 2
+if model == 'kakan':
+    file_name, n_output = model, 2
+if model == 'minkan':
     file_name, n_output = model, 2
 if model == 'pon':
     file_name, n_output = model, 2
