@@ -122,7 +122,8 @@ class Format():
                 if elem == 'N' and self.is_ankan(int(attr['m'])):
                     self.output(who, 1)
                 else:
-                    self.output(who, 0)
+                    if randint(1, 3) == 1:
+                        self.output(who, 0)
 
     def sample_pon(self, pai, who):
         elem, attr = self.actions[self.action_i + 1]
@@ -147,12 +148,15 @@ class Format():
         elem, attr = self.actions[self.action_i + 1]
         attr = dict(re.findall(r'\s?(.*?)="(.*?)"', attr))
         i = (who + 1) % 4
+
         # 字牌 or リーチ中
         if pai >= 27 or sum(self.richi[i]) >= 1:
             return
+
         # 次がロン
         if elem == 'AGARI' and attr['who'] != attr['fromWho']:
             return
+
         # 次がポン・カン
         if elem == 'N' and (self.is_minko(int(attr['m'])) or self.is_kan(int(attr['m']))):
             return
@@ -448,7 +452,7 @@ class Format():
 
 
 Format(
-    years=[2016, 2017],
+    years=[2015, 2016, 2017],
     mode=Format.ANKAN_MODE,
     max_count=500000,
     debug=False
