@@ -10,7 +10,7 @@ from chainer.datasets import TupleDataset
 from chainer.training import extensions
 from sklearn.model_selection import train_test_split
 
-model = 'ankan'
+model = 'dahai'
 
 if model == 'dahai':
     file_name, n_output = model, 34
