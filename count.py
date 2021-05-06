@@ -1,7 +1,7 @@
 
 import csv
 
-model = 'ankan'
+model = 'chi'
 
 if model == 'dahai':
     file_name, n_output = model, 34

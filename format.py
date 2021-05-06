@@ -170,7 +170,7 @@ class Format():
             else:
                 y = 0
 
-            if y != 0 or randint(1, 4) == 1:
+            if y != 0 or randint(1, 8) == 1:
                 self.output(i, y)
 
     def m(self, who, m):
@@ -415,8 +415,15 @@ class Format():
                     pai = self.pai(int(elem[1:]))
 
                     # 打牌の抽出
-                    if self.mode == Format.DAHAI_MODE and sum(self.richi[who]) == 0 and randint(1, 50) == 1:
-                        self.output(who, pai)
+                    if self.mode == Format.DAHAI_MODE and sum(self.richi[who]) == 0:
+                        n_huro = sum(self.huro_type[who])
+                        # n_huro = 0 -> 50
+                        # n_huro = 1 -> 20
+                        # n_huro = 2 -> 8
+                        # n_huro = 3 -> 3
+                        # n_huro = 4 -> 1
+                        if randint(1, 50 // (2.5 ** n_huro) + 1) == 1:
+                            self.output(who, pai)
 
                     # 打牌の処理
                     self.kawa[who][pai] += 1
@@ -453,7 +460,7 @@ class Format():
 
 Format(
     years=[2015, 2016, 2017],
-    mode=Format.ANKAN_MODE,
+    mode=Format.DAHAI_MODE,
     max_count=500000,
     debug=False
 )
