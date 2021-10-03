@@ -12,15 +12,11 @@ class GameRoutine:
         # 局開始状態
         if self.state == Const.KYOKU_START_STATE:
             if self.kyoku >= 8 or any(bool(self.scores[i] < 0) for i in range(4)):
-                for player in self.players:
-                    player.syukyoku_message()
                 self.prev_state = Const.KYOKU_START_STATE
                 self.state = Const.SYUKYOKU_STATE
                 return True
 
             self.start_kyoku()
-            for player in self.players:
-                player.start_kyoku_message()
 
             self.prev_state = self.state
             self.state = Const.TSUMO_STATE
@@ -44,13 +40,6 @@ class GameRoutine:
             self.ankan_decisions = dict()
             self.richi_decisions = dict()
 
-            # 送信
-            for player in self.players:
-                player.tsumo_message(tsumo)
-            self.players[self.teban].tsumoho_notice_message()
-            self.players[self.teban].richi_notice_message()
-            self.players[self.teban].ankan_notice_message()
-
             # AIの選択を格納
             player = self.players[self.teban]
             if player.type == 'kago' or player.type == 'dqn':
@@ -72,9 +61,7 @@ class GameRoutine:
             # ツモの決定
             who, tf = list(self.tsumoho_decisions.items())[0]
             if tf:
-                tsumoho = self.players[who].tsumoho()
-                for player in self.players:
-                    player.tsumoho_message(tsumoho)
+                self.players[who].tsumoho()
 
                 self.prev_state = Const.NOTICE1_STATE
                 self.state = Const.AGARI_STATE
@@ -86,10 +73,6 @@ class GameRoutine:
                 self.players[who].ankan(pais)
                 self.players[who].open_dora()
 
-                for player in self.players:
-                    player.ankan_message(pais)
-                    player.open_dora_message()
-
                 self.prev_state = Const.NOTICE1_STATE
                 self.state = Const.TSUMO_STATE
                 return True
@@ -98,8 +81,6 @@ class GameRoutine:
             who, tf = list(self.richi_decisions.items())[0]
             if tf:
                 self.players[who].richi_declare()
-                for player in self.players:
-                    player.richi_declare_notice_message()
 
                 self.prev_state = Const.NOTICE1_STATE
                 self.state = Const.DAHAI_STATE
@@ -130,16 +111,6 @@ class GameRoutine:
             self.pon_decisions = dict()
             self.chi_decisions = dict()
 
-            # 送信
-            for player in self.players:
-                player.dahai_message(pai)
-                if pai in [player.richi_pai for player in self.players]:
-                    player.richi_bend_message(pai)
-
-                player.ronho_notice_message()
-                player.pon_notice_message()
-                player.chi_notice_message()
-
             # AIの選択を格納
             for player in self.players:
                 if player.type == 'kago' or player.type == 'dqn':
@@ -160,9 +131,7 @@ class GameRoutine:
             for who, tf in self.ronho_decisions.items():
                 if not tf:
                     continue
-                ronho = self.players[who].ronho()
-                for player in self.players:
-                    player.ronho_message(ronho)
+                self.players[who].ronho()
 
                 self.prev_state = Const.NOTICE2_STATE
                 self.state = Const.AGARI_STATE
@@ -172,16 +141,12 @@ class GameRoutine:
             for player in self.players:
                 if player.is_richi_declare and not player.is_richi_complete:
                     player.richi_complete()
-                    for player in self.players:
-                        player.richi_complete_message()
                     break
 
             # ポン決定
             for who, (pais, pai) in self.pon_decisions.items():
                 if pais is not None:
                     self.players[who].pon(pais, pai)
-                    for player in self.players:
-                        player.pon_message(pais, pai)
 
                     self.dahai_decisions = dict()
                     self.prev_state = Const.NOTICE2_STATE
@@ -192,8 +157,6 @@ class GameRoutine:
             for who, (pais, pai) in self.chi_decisions.items():
                 if pais is not None:
                     self.players[who].chi(pais, pai)
-                    for player in self.players:
-                        player.chi_message(pais, pai)
 
                     self.dahai_decisions = dict()
                     self.prev_state = Const.NOTICE2_STATE
@@ -212,9 +175,7 @@ class GameRoutine:
 
         # 流局状態
         elif self.state == Const.RYUKYOKU_STATE:
-            ryukyoku = self.ryukyoku()
-            for player in self.players:
-                player.ryukyoku_message(ryukyoku)
+            self.ryukyoku()
 
             if self.mode == Const.AUTO_MODE:
                 self.next_kyoku()
