@@ -196,6 +196,7 @@ class Kago(Player):
 
     def decide_ronho(self):
         if self.can_ronho():
+            self.ronho()
             return True
         else:
             return False
@@ -219,7 +220,11 @@ class Kago(Player):
                             mk, mv = [last_dahai, a, b], y[i]
                             break
 
-        return mk
+        if mk is not None:
+            self.pon(mk, last_dahai)
+            return True
+        else:
+            return False
 
     def decide_chi(self):
         x = self.make_input()
@@ -253,4 +258,8 @@ class Kago(Player):
                             mk, mv = [last_dahai, a, b], y[i]
                             break
 
-        return mk
+        if mk is not None:
+            self.chi(mk, last_dahai)
+            return True
+        else:
+            return False
