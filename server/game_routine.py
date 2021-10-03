@@ -5,6 +5,9 @@ from .const import Const
 
 class GameRoutine:
     def next(self):
+        if self.debug:
+            print(self.state)
+
         # 局開始状態
         if self.state == Const.KYOKU_START_STATE:
             if self.kyoku >= 8 or any(bool(self.scores[i] < 0) for i in range(4)):
