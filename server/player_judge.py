@@ -1,5 +1,4 @@
 from .agari import Agari
-from .const import Const
 
 
 class PlayerJudge:
@@ -93,9 +92,6 @@ class PlayerJudge:
         return True
 
     def can_pon(self, pais, pai):
-        if self.game.teban == self.position:
-            # print('捨てた本人')
-            return False
         if self.is_richi_complete:
             # print('リーチしている')
             return False
@@ -122,9 +118,6 @@ class PlayerJudge:
         return True
 
     def can_chi(self, pais, pai):
-        if (self.game.teban + 1) % 4 != self.position:
-            # print('次の手番じゃない')
-            return False
         if self.is_richi_complete:
             # print('リーチしている')
             return False

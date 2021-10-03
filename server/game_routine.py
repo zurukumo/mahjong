@@ -58,70 +58,47 @@ class GameRoutine:
             self.state = Const.DAHAI_STATE
             return True
 
-        # 打牌受信状態
+        # 打牌状態
         elif self.state == Const.DAHAI_STATE:
-            player = self.players[self.teban]
-
-            player.decide_dahai()
-
-            # 選択を格納
-            self.ronho_decisions = dict()
-            self.pon_decisions = dict()
-            self.chi_decisions = dict()
-
-            # AIの選択を格納
-            for player in self.players:
-                if player.type == 'kago' or player.type == 'dqn':
-                    self.ronho_decisions[player.position] = player.decide_ronho()
-                    self.pon_decisions[player.position] = [player.decide_pon(), self.last_dahai]
-                    self.chi_decisions[player.position] = [player.decide_chi(), self.last_dahai]
-
+            self.players[self.teban].decide_dahai()
             self.prev_state = Const.DAHAI_STATE
-            self.state = Const.NOTICE2_STATE
+            self.state = Const.NAKI_STATE
             return True
 
-        # 通知2受信状態
-        elif self.state == Const.NOTICE2_STATE:
-            if len(self.ronho_decisions) != 4 or len(self.pon_decisions) != 4 or len(self.chi_decisions) != 4:
-                return False
+        # 鳴き状態
+        elif self.state == Const.NAKI_STATE:
+            # ロン和するかどうか(重複あり)
+            flg = False
+            for player in self.prange()[1:]:
+                if player.decide_ronho():
+                    flg = True
 
-            # ロン決定
-            for who, tf in self.ronho_decisions.items():
-                if not tf:
-                    continue
-                self.players[who].ronho()
-
-                self.prev_state = Const.NOTICE2_STATE
+            if flg:
+                self.prev_state = Const.NAKI_STATE
                 self.state = Const.AGARI_STATE
                 return True
 
             # ロンじゃなければリーチ成立
-            for player in self.players:
-                if player.is_richi_declare and not player.is_richi_complete:
-                    player.richi_complete()
-                    break
+            player = self.players[self.teban]
+            if player.is_richi_declare and not player.is_richi_complete:
+                player.richi_complete()
 
-            # ポン決定
-            for who, (pais, pai) in self.pon_decisions.items():
-                if pais is not None:
-                    self.players[who].pon(pais, pai)
-
-                    self.dahai_decisions = dict()
-                    self.prev_state = Const.NOTICE2_STATE
+            # ポンするかどうか
+            for player in self.prange()[1:]:
+                if player.decide_pon():
+                    self.prev_state = Const.NAKI_STATE
                     self.state = Const.DAHAI_STATE
                     return True
 
-            # チー決定
-            for who, (pais, pai) in self.chi_decisions.items():
-                if pais is not None:
-                    self.players[who].chi(pais, pai)
+            # チーするかどうか
+            player = self.players[(self.teban + 1) % 4]
+            if player.decide_chi():
+                input()
+                self.prev_state = Const.NAKI_STATE
+                self.state = Const.DAHAI_STATE
+                return True
 
-                    self.dahai_decisions = dict()
-                    self.prev_state = Const.NOTICE2_STATE
-                    self.state = Const.DAHAI_STATE
-                    return True
-
-            self.prev_state = Const.NOTICE2_STATE
+            self.prev_state = Const.NAKI_STATE
             self.state = Const.TSUMO_STATE
             return True
 
