@@ -5,9 +5,6 @@ from .const import Const
 
 class GameRoutine:
     def next(self):
-        if self.debug:
-            print(self.state)
-
         # 局開始状態
         if self.state == Const.KYOKU_START_STATE:
             if self.kyoku >= 8 or any(bool(self.scores[i] < 0) for i in range(4)):
@@ -28,69 +25,41 @@ class GameRoutine:
                 self.state = Const.RYUKYOKU_STATE
                 return True
 
-            # ツモ
-            if self.prev_state != Const.NOTICE1_STATE:
+            # ツモ, 前回が暗槓でなければ手番を増やす
+            if self.prev_state != Const.TSUMO_STATE:
                 self.teban = (self.teban + 1) % 4
             tsumo = self.yama.pop()
             self.players[self.teban].tsumo(tsumo)
 
-            # 選択を格納
-            self.tsumoho_decisions = dict()
-            self.ankan_decisions = dict()
-            self.richi_decisions = dict()
-
-            # AIの選択を格納
+            # ツモ和, 暗槓, リーチの判定
             player = self.players[self.teban]
-            if player.type == 'kago' or player.type == 'dqn':
-                self.tsumoho_decisions[player.position] = player.decide_tsumoho()
-                self.richi_decisions[player.position] = player.decide_richi()
-                self.ankan_decisions[player.position] = player.decide_ankan()
 
-            self.prev_state = Const.TSUMO_STATE
-            self.state = Const.NOTICE1_STATE
-            return True
-
-        # 通知1受信状態
-        elif self.state == Const.NOTICE1_STATE:
-            if len(self.tsumoho_decisions) != 1 or len(self.richi_decisions) != 1 or len(self.ankan_decisions) != 1:
-                return False
-
-            self.dahai_decisions = dict()
-
-            # ツモの決定
-            who, tf = list(self.tsumoho_decisions.items())[0]
-            if tf:
-                self.players[who].tsumoho()
-
-                self.prev_state = Const.NOTICE1_STATE
+            # ツモ和するかどうか
+            if player.decide_tsumoho():
+                self.prev_state = Const.TSUMO_STATE
                 self.state = Const.AGARI_STATE
                 return True
 
-            # 暗槓の決定
-            who, pais = list(self.ankan_decisions.items())[0]
-            if pais is not None:
-                self.players[who].ankan(pais)
-                self.players[who].open_dora()
-
-                self.prev_state = Const.NOTICE1_STATE
+            # 暗槓するかどうか
+            if player.decide_ankan():
+                self.prev_state = Const.TSUMO_STATE
                 self.state = Const.TSUMO_STATE
                 return True
 
-            # リーチの決定
-            who, tf = list(self.richi_decisions.items())[0]
-            if tf:
-                self.players[who].richi_declare()
-
-                self.prev_state = Const.NOTICE1_STATE
+            # リーチするかどうか
+            if player.decide_richi():
+                self.prev_state = Const.TSUMO_STATE
                 self.state = Const.DAHAI_STATE
                 return True
 
-            self.prev_state = Const.NOTICE1_STATE
+            self.prev_state = Const.TSUMO_STATE
             self.state = Const.DAHAI_STATE
             return True
 
         # 打牌受信状態
         elif self.state == Const.DAHAI_STATE:
+            self.dahai_decisions = dict()
+
             # AIの選択を格納
             player = self.players[self.teban]
             if player.position not in self.dahai_decisions and player.type == 'kago':

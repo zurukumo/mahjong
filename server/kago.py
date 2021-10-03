@@ -136,6 +136,7 @@ class Kago(Player):
 
     def decide_tsumoho(self):
         if self.can_tsumoho():
+            self.tsumoho()
             return True
         else:
             return False
@@ -155,7 +156,12 @@ class Kago(Player):
                             mk, mv = [p * 4, p * 4 + 1, p * 4 + 2, p * 4 + 3], y[i]
                             break
 
-        return mk
+        if mk is not None:
+            self.ankan(mk)
+            self.open_dora()
+            return True
+        else:
+            return False
 
     def decide_richi(self):
         if not any([self.can_richi_declare(dahai) for dahai in self.tehai]):
@@ -164,7 +170,11 @@ class Kago(Player):
         x = self.make_input()
         y = Kago.RICHI_NETWORK.predict(x)[0]
 
-        return bool(y[1] > y[0])
+        if y[1] > y[0]:
+            self.richi_declare()
+            return True
+        else:
+            return False
 
     def decide_dahai(self):
         x = self.make_input()
