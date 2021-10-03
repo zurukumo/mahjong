@@ -3,7 +3,7 @@ __pycache__
 .venv
 *.code-workspace
 
-xml*
 datasets
 models
+paihus
 thesis
