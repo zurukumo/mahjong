@@ -20,19 +20,19 @@ class GameRoutine:
 
         # ツモ状態
         elif self.state == Const.TSUMO_STATE:
+            # 山がなくなったら流局
             if len(self.yama) == 0:
                 self.prev_state = Const.TSUMO_STATE
                 self.state = Const.RYUKYOKU_STATE
                 return True
 
+            player = self.players[self.teban]
+
             # ツモ, 前回が暗槓でなければ手番を増やす
             if self.prev_state != Const.TSUMO_STATE:
                 self.teban = (self.teban + 1) % 4
             tsumo = self.yama.pop()
-            self.players[self.teban].tsumo(tsumo)
-
-            # ツモ和, 暗槓, リーチの判定
-            player = self.players[self.teban]
+            player.tsumo(tsumo)
 
             # ツモ和するかどうか
             if player.decide_tsumoho():
