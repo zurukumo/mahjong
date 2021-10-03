@@ -1,11 +1,10 @@
 __pycache__
 .DS_Store
-xml*
+
 *.csv
-*.zip
-*.net
 *.code-workspace
-~*
+
+xml*
 progress
+thesis
 .venv
-*.npz
