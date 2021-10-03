@@ -78,9 +78,6 @@ class PlayerJudge:
         return True
 
     def can_ronho(self):
-        if self.game.teban == self.position:
-            # print('捨てた本人')
-            return False
         if self.calc_shanten(add=[self.game.last_dahai]) >= 0:
             # print('和了ってない')
             return False
@@ -97,9 +94,6 @@ class PlayerJudge:
             return False
         if pai not in pais:
             # print('鳴いた牌が含まれていない')
-            return False
-        if self.game.last_dahai != pai:
-            # print('鳴いた牌が最後の打牌と不一致')
             return False
         if len(pais) != 3:
             # print('牌の数が3つじゃない')
@@ -123,9 +117,6 @@ class PlayerJudge:
             return False
         if pai not in pais:
             # print('鳴いた牌が含まれていない')
-            return False
-        if self.game.last_dahai != pai:
-            # print('鳴いた牌が最後の打牌と不一致')
             return False
         if len(pais) != 3:
             # print('牌の数が3つじゃない')
