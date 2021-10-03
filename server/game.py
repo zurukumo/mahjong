@@ -1,5 +1,5 @@
-from .game_action import GameAction
-from .game_routine import GameRoutine
+from server.game_action import GameAction
+from server.game_routine import GameRoutine
 
 # TODO 喰い替え禁止
 
