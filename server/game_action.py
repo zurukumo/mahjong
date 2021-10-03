@@ -72,57 +72,9 @@ class GameAction:
         # プログラムカウンター
         self.pc = 0
 
-        # 通知
-        self.ronho_decisions = dict()
-        self.minkan_decisions = dict()
-        self.pon_decisions = dict()
-        self.chi_decisions = dict()
-
         # 状態
         self.prev_state = self.state
         self.state = Const.KYOKU_START_STATE
-
-    def tsumoho(self, player):
-        if player.can_tsumoho():
-            self.tsumoho_decisions[player.position] = True
-            self.ankan_decisions[player.position] = None
-            self.richi_decisions[player.position] = False
-
-    def ankan(self, pais, player):
-        if player.can_ankan(pais):
-            self.tsumoho_decisions[player.position] = False
-            self.ankan_decisions[player.position] = pais
-            self.richi_decisions[player.position] = False
-
-    def richi_declare(self, player):
-        for i in player.tehai:
-            if player.can_richi_declare(i):
-                self.tsumoho_decisions[player.position] = False
-                self.ankan_decisions[player.position] = None
-                self.richi_decisions[player.position] = True
-                break
-
-    def dahai(self, dahai, player):
-        if player.can_dahai(dahai):
-            self.dahai_decisions[player.position] = dahai
-
-    def ronho(self, player):
-        if player.can_ronho():
-            self.ronho_decisions[player.position] = True
-            self.pon_decisions[player.position] = [None, None]
-            self.chi_decisions[player.position] = [None, None]
-
-    def pon(self, pais, pai, player):
-        if player.can_pon(pais, pai):
-            self.ronho_decisions[player.position] = False
-            self.pon_decisions[player.position] = [pais, pai]
-            self.chi_decisions[player.position] = [None, None]
-
-    def chi(self, pais, pai, player):
-        if player.can_chi(pais, pai):
-            self.ronho_decisions[player.position] = False
-            self.pon_decisions[player.position] = [None, None]
-            self.chi_decisions[player.position] = [pais, pai]
 
     def ryukyoku(self):
         is_tenpais = []
@@ -154,11 +106,6 @@ class GameAction:
         self.honba += 1
         if not is_tenpais[self.kyoku % 4]:
             self.kyoku += 1
-
-        return {
-            'scores': scores,
-            'scoreMovements': score_movements
-        }
 
     def next_kyoku(self):
         if self.state == Const.AGARI_STATE:

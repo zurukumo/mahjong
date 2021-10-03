@@ -1,7 +1,5 @@
 from .agari import Agari
 
-# TODO decisionsはGameじゃなくてPlayerに持たせたほうが良い
-
 
 class PlayerAction:
     def open_dora(self):
@@ -32,14 +30,6 @@ class PlayerAction:
             self.game.honba = 0
         if self.position != self.game.kyoku % 4:
             self.game.kyoku += 1
-
-        return {
-            'yakus': yakus,
-            'doras': doras,
-            'uradoras': uradoras,
-            'scores': self.game.scores,
-            'scoreMovements': score_movements,
-        }
 
     def tsumo(self):
         pai = self.game.yama.pop()
@@ -102,14 +92,6 @@ class PlayerAction:
         if self.position != self.game.kyoku % 4:
             self.game.kyoku += 1
 
-        return {
-            'yakus': yakus,
-            'doras': doras,
-            'uradoras': uradoras,
-            'scores': self.game.scores,
-            'scoreMovements': score_movements,
-        }
-
     def pon(self, pais, pai):
         for i in pais:
             if i != pai:
@@ -131,59 +113,3 @@ class PlayerAction:
         )
         self.game.teban = self.position
         self.game.pc += 10
-
-    def cancel(self):
-        if self.game.teban == self.position:
-            self.game.ankan_decisions[self.position] = None
-            self.game.richi_decisions[self.position] = False
-
-        self.game.ronho_decisions[self.position] = False
-        self.game.minkan_decisions[self.position] = [None, None]
-        self.game.pon_decisions[self.position] = [None, None]
-        self.game.chi_decisions[self.position] = [None, None]
-
-    def game_info(self):
-        tehais = []
-        for i, player in self.prange():
-            if i == self.position:
-                tehais.append(player.tehai)
-            else:
-                tehais.append(self.game.make_dummies(player.tehai))
-
-        kawas = []
-        for i, player in self.prange():
-            if i == self.position:
-                kawas.append(player.kawa)
-            else:
-                kawas.append(self.game.make_dummies(player.kawa))
-
-        richi_pais = []
-        for player in self.game.players:
-            if player.richi_pai is not None:
-                richi_pais.append(player.richi_pai)
-
-        huros = []
-        for _, player in self.prange():
-            huros.append(player.huro)
-
-        dora = self.game.dora[:self.game.n_dora] + self.game.make_dummies(self.game.dora[self.game.n_dora:5])
-
-        scores = [self.game.scores[i] for i, _ in self.prange()]
-        richis = [player.is_richi_complete for _, player in self.prange()]
-        kazes = ['東南西北'[(i - self.game.kyoku) % 4] for i, _ in self.prange()]
-        rest = len(self.game.yama)
-
-        return {
-            'tehais': tehais,
-            'kawas': kawas,
-            'richiPais': richi_pais,
-            'huros': huros,
-            'kyoku': self.game.kyoku,
-            'honba': self.game.honba,
-            'kyotaku': self.game.kyotaku,
-            'dora': dora,
-            'rest': rest,
-            'scores': scores,
-            'richis': richis,
-            'kazes': kazes,
-        }
