@@ -140,9 +140,6 @@ class PlayerAction:
         self.game.pon_decisions[self.position] = [None, None]
         self.game.chi_decisions[self.position] = [None, None]
 
-    def reset_actions(self):
-        self.actions = []
-
     def game_info(self):
         tehais = []
         for i, player in self.prange():

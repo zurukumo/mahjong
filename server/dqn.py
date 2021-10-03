@@ -149,7 +149,7 @@ class MyQNetwork(network.Network):
             layers.Dense(n_action, activation='softmax'),
         ])
 
-    def call(self, observation, step_type=None, network_state=(), training=True):
+    def call(self, observation, network_state=(), training=True):
         observation = tf.cast(observation, tf.float32)
         actions = self.model(observation, training=training)
         return actions, network_state
