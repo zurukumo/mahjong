@@ -5,6 +5,5 @@ __pycache__
 *.code-workspace
 
 xml*
-progress
 thesis
 .venv
