@@ -1,4 +1,3 @@
-import os
 from itertools import product
 
 import numpy as np
@@ -6,15 +5,13 @@ from tensorflow.keras import models
 
 from .player import Player
 
-module_dir = os.path.dirname(__file__)
-
 
 class Kago(Player):
-    DAHAI_NETWORK = models.load_model(os.path.join(module_dir, 'networks/dahai.h5'))
-    RICHI_NETWORK = models.load_model(os.path.join(module_dir, 'networks/richi.h5'))
-    ANKAN_NETWORK = models.load_model(os.path.join(module_dir, 'networks/ankan.h5'))
-    PON_NETWORK = models.load_model(os.path.join(module_dir, 'networks/pon.h5'))
-    CHI_NETWORK = models.load_model(os.path.join(module_dir, 'networks/chi.h5'))
+    DAHAI_NETWORK = models.load_model('models/dahai.h5')
+    RICHI_NETWORK = models.load_model('models/richi.h5')
+    ANKAN_NETWORK = models.load_model('models/ankan.h5')
+    PON_NETWORK = models.load_model('models/pon.h5')
+    CHI_NETWORK = models.load_model('models/chi.h5')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

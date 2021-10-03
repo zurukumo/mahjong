@@ -1,6 +1,3 @@
-from .const import Const
-
-
 class GameBase:
     def __init__(self):
         pass

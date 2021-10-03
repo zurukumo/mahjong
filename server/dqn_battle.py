@@ -5,9 +5,9 @@ from tf_agents.specs import array_spec
 from tf_agents.trajectories import time_step as ts
 from tf_agents.utils import nest_utils
 
-from .const import Const
-from .game import Game
-from .kago import Kago
+from server.const import Const
+from server.game import Game
+from server.kago import Kago
 
 
 class DQN(Kago):
