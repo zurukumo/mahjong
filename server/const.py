@@ -3,8 +3,6 @@ class Const:
     INITIAL_STATE = 'INITIAL'
     KYOKU_START_STATE = 'KYOKUSTART'
     TSUMO_STATE = 'TSUMO'
-    # NOTICE1 - リーチ/暗槓/加槓
-    NOTICE1_STATE = 'NOTICE1'
     DAHAI_STATE = 'DAHAI'
     # NOTICE2 - 明槓/ポン/チ
     NOTICE2_STATE = 'NOTICE2'
