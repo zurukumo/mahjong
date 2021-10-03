@@ -44,6 +44,7 @@ class PlayerAction:
         self.huro.append({'type': 'ankan', 'pais': pais})
         self.game.n_kan += 1
         self.game.pc += 10
+        self.game.ankan_flg = True
 
     def richi_declare(self):
         self.is_richi_declare = True

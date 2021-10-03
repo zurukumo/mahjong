@@ -23,7 +23,6 @@ class GameAction:
         for i, player in enumerate(self.players):
             player.position = i
 
-        self.prev_state = Const.INITIAL_STATE
         self.state = Const.KYOKU_START_STATE
 
     def start_kyoku(self):
@@ -73,7 +72,7 @@ class GameAction:
         self.pc = 0
 
         # 状態
-        self.prev_state = self.state
+        self.ankan_flg = False
         self.state = Const.KYOKU_START_STATE
 
     def ryukyoku(self):
