@@ -5,7 +5,6 @@ class PlayerBase:
     def __init__(self, id, game):
         self.id = id
         self.game = game
-        self.actions = {}
 
     # 汎用関数
     def prange(self):
