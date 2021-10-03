@@ -59,8 +59,7 @@ class GameAction:
         # 配牌
         for player in self.players:
             for _ in range(13):
-                tsumo = self.yama.pop()
-                player.tsumo(tsumo)
+                player.tsumo()
 
         # 最後の打牌・手番
         self.last_tsumo = None
