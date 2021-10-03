@@ -18,6 +18,16 @@ def draw_board():
         '\033[32m{}\033[0m',
         '\033[36m{}\033[0m',
     )
+
+    print('{}{}局\n {} {} {} {}'.format(
+        '東南西北'[game.kyoku // 4],
+        game.kyoku % 4 + 1,
+        game.scores[0],
+        game.scores[1],
+        game.scores[2],
+        game.scores[3],
+    ))
+
     for i, player in enumerate(game.players):
         if not hasattr(player, 'tehai'):
             continue
@@ -59,4 +69,4 @@ def draw_board():
 while True:
     game.next()
     draw_board()
-    input()
+    # input()
