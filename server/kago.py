@@ -189,7 +189,10 @@ class Kago(Player):
                     mk, mv = p, y[i]
                     break
 
-        return mk
+        self.dahai(mk)
+        self.richi(mk)
+
+        return True
 
     def decide_ronho(self):
         if self.can_ronho():

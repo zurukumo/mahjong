@@ -60,21 +60,9 @@ class GameRoutine:
 
         # 打牌受信状態
         elif self.state == Const.DAHAI_STATE:
-            self.dahai_decisions = dict()
-
-            # AIの選択を格納
             player = self.players[self.teban]
-            if player.position not in self.dahai_decisions and player.type == 'kago':
-                self.dahai_decisions[player.position] = player.decide_dahai()
 
-            if len(self.dahai_decisions) != 1:
-                return False
-
-            who, pai = list(self.dahai_decisions.items())[0]
-
-            # 打牌
-            self.players[who].dahai(pai)
-            self.players[who].richi(pai)
+            player.decide_dahai()
 
             # 選択を格納
             self.ronho_decisions = dict()
