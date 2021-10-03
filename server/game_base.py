@@ -11,16 +11,6 @@ class GameBase:
             if player.id == player_id:
                 return player
 
-    def make_dummy(self, original):
-        if self.mode in [Const.VISIBLE_MODE, Const.AUTO_MODE]:
-            return original
-        return self.dummy[original]
-
-    def make_dummies(self, original):
-        if self.mode in [Const.VISIBLE_MODE, Const.AUTO_MODE]:
-            return original
-        return [self.dummy[o] for o in original]
-
     def make_simple(self, original):
         if original == 16:
             return 35

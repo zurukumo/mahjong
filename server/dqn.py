@@ -54,7 +54,7 @@ class Env(py_environment.PyEnvironment):
 
         self.game = Game()
         self.player = DQN(id=0, game=self.game)
-        self.game.start_game(mode=Const.AUTO_MODE, player=self.player)
+        self.game.start_game(player=self.player)
         self.game.start_kyoku()
 
         self.reward = 0
