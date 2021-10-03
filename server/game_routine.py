@@ -26,16 +26,18 @@ class GameRoutine:
                 self.state = Const.RYUKYOKU_STATE
                 return True
 
-            player = self.players[self.teban]
-
-            # ツモ, 前回が暗槓でなければ手番を増やす
+            # 前回が暗槓でなければ手番を増やす
             if self.prev_state != Const.TSUMO_STATE:
                 self.teban = (self.teban + 1) % 4
-            tsumo = self.yama.pop()
-            player.tsumo(tsumo)
+
+            player = self.players[self.teban]
+
+            # ツモ
+            player.tsumo()
 
             # ツモ和するかどうか
             if player.decide_tsumoho():
+
                 self.prev_state = Const.TSUMO_STATE
                 self.state = Const.AGARI_STATE
                 return True

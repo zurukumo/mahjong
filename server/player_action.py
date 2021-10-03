@@ -41,7 +41,9 @@ class PlayerAction:
             'scoreMovements': score_movements,
         }
 
-    def tsumo(self, pai):
+    def tsumo(self):
+        pai = self.game.yama.pop()
+
         self.tehai.append(pai)
         self.tehai.sort()
         self.game.last_tsumo = pai
