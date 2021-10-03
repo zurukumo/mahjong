@@ -18,12 +18,6 @@ class PlayerJudge:
         return True
 
     def can_dahai(self, dahai):
-        if self.game.teban != self.position:
-            # print('手番じゃない')
-            return False
-        if self.game.state not in [Const.DAHAI_STATE]:
-            # print('ステート異常')
-            return False
         if dahai not in self.tehai:
             # print('手牌に打牌する牌がない')
             return False
@@ -37,14 +31,8 @@ class PlayerJudge:
         return True
 
     def can_richi_declare(self, dahai):
-        if self.game.teban != self.position:
-            # print('手番じゃない')
-            return False
         if self.is_richi_complete:
             # print('リーチしている')
-            return False
-        if self.game.state not in [Const.TSUMO_STATE, Const.DAHAI_STATE]:
-            # print('ステート異常')
             return False
         huro_types = [huro['type'] for huro in self.huro]
         if len(huro_types) - huro_types.count('ankan') != 0:
@@ -60,12 +48,6 @@ class PlayerJudge:
         return True
 
     def can_ankan(self, ankan):
-        if self.game.teban != self.position:
-            # print('手番じゃない')
-            return False
-        if self.game.state != Const.TSUMO_STATE:
-            # print('ステート以上')
-            return False
         if self.game.n_kan >= 4:
             # print('カンの個数が4以上')
             return False
@@ -117,9 +99,6 @@ class PlayerJudge:
         if self.is_richi_complete:
             # print('リーチしている')
             return False
-        if self.game.state != Const.DAHAI_STATE and self.game.state != Const.NOTICE2_STATE:
-            # print('ステート異常')
-            return False
         if pai not in pais:
             # print('鳴いた牌が含まれていない')
             return False
@@ -148,9 +127,6 @@ class PlayerJudge:
             return False
         if self.is_richi_complete:
             # print('リーチしている')
-            return False
-        if self.game.state != Const.DAHAI_STATE and self.game.state != Const.NOTICE2_STATE:
-            # print('ステート異常')
             return False
         if pai not in pais:
             # print('鳴いた牌が含まれていない')
