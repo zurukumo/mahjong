@@ -5,7 +5,7 @@ from random import randint
 from shanten import calc_shanten, get_yuko
 
 
-class Format():
+class Parser():
     DAHAI_MODE = 0
     RICHI_MODE = 1
     PON_MODE = 2
@@ -70,7 +70,7 @@ class Format():
 
         # 暗槓以外の副露をしている
         n_huro = sum(self.huro_type[who])
-        n_ankan = self.huro_type[who][Format.ANKAN_TYPE]
+        n_ankan = self.huro_type[who][Parser.ANKAN_TYPE]
         if n_huro != n_ankan:
             return
 
@@ -179,7 +179,7 @@ class Format():
             p = ((m & 0xFF00) >> 8) // 4
             self.huro[who][p] += 4
             self.tehai[who][p] -= 4
-            self.huro_type[who][Format.ANKAN_TYPE] += 1
+            self.huro_type[who][Parser.ANKAN_TYPE] += 1
             # print(self.url())
             # print('暗槓', self.jp(p))
             # print('最後の打牌', self.jp(self.last_dahai))
@@ -194,7 +194,7 @@ class Format():
                     self.huro[who][p + i] += 1
                     self.tehai[who][p + i] -= 1
                 self.tehai[who][self.last_dahai] += 1
-                self.huro_type[who][Format.SHUNTSU_TYPE] += 1
+                self.huro_type[who][Parser.SHUNTSU_TYPE] += 1
                 # print(self.url())
                 # print('順子', self.jp(p))
                 # t = ((m & 0xFC00) >> 10) % 3
@@ -208,7 +208,7 @@ class Format():
                 self.huro[who][p] += 3
                 self.tehai[who][p] -= 3
                 self.tehai[who][self.last_dahai] += 1
-                self.huro_type[who][Format.MINKO_TYPE] += 1
+                self.huro_type[who][Parser.MINKO_TYPE] += 1
                 # print(self.url())
                 # print('明刻', self.jp(p))
                 # print('最後の打牌', self.jp(self.last_dahai))
@@ -218,8 +218,8 @@ class Format():
             elif self.is_kakan(m) == 1:
                 p = ((m & 0xFE00) >> 9) // 3
                 self.huro[who][p] += 1
-                self.huro_type[who][Format.MINKO_TYPE] -= 1
-                self.huro_type[who][Format.MINKAN_TYPE] += 1
+                self.huro_type[who][Parser.MINKO_TYPE] -= 1
+                self.huro_type[who][Parser.MINKAN_TYPE] += 1
                 # print(self.url())
                 # print('加槓', self.jp(p))
                 # input()
@@ -230,7 +230,7 @@ class Format():
                 self.huro[who][p] += 4
                 self.tehai[who][p] -= 4
                 self.tehai[who][self.last_dahai] += 1
-                self.huro_type[who][Format.MINKAN_TYPE] += 1
+                self.huro_type[who][Parser.MINKAN_TYPE] += 1
                 # print(self.url())
                 # print('大明槓', self.jp(p))
                 # print('最後の打牌', self.jp(self.last_dahai))
@@ -238,19 +238,19 @@ class Format():
 
     def output(self, who, y):
         # 出力ファイル名の決定
-        if self.mode == Format.DAHAI_MODE:
+        if self.mode == Parser.DAHAI_MODE:
             output_file = 'dahai.csv'
-        elif self.mode == Format.RICHI_MODE:
+        elif self.mode == Parser.RICHI_MODE:
             output_file = 'richi.csv'
-        elif self.mode == Format.PON_MODE:
+        elif self.mode == Parser.PON_MODE:
             output_file = 'pon.csv'
-        elif self.mode == Format.CHI_MODE:
+        elif self.mode == Parser.CHI_MODE:
             output_file = 'chi.csv'
-        elif self.mode == Format.ANKAN_MODE:
+        elif self.mode == Parser.ANKAN_MODE:
             output_file = 'ankan.csv'
-        elif self.mode == Format.KAKAN_MODE:
+        elif self.mode == Parser.KAKAN_MODE:
             output_file = 'kakan.csv'
-        elif self.mode == Format.MINKAN_MODE:
+        elif self.mode == Parser.MINKAN_MODE:
             output_file = 'minkan.csv'
 
         with open(output_file, 'a') as f:
@@ -345,7 +345,7 @@ class Format():
                         debug += self.jp(i) * last_dahai[i]
                 print('最後の打牌:', debug)
 
-                print('結果:', self.jp(y) if self.mode == Format.DAHAI_MODE else y)
+                print('結果:', self.jp(y) if self.mode == Parser.DAHAI_MODE else y)
                 input()
 
         self.count += 1
@@ -401,11 +401,11 @@ class Format():
                     self.last_tsumo = pai
 
                     # リーチの抽出
-                    if self.mode == Format.RICHI_MODE:
+                    if self.mode == Parser.RICHI_MODE:
                         self.sample_richi(who)
 
                     # 暗槓の抽出
-                    if self.mode == Format.ANKAN_MODE:
+                    if self.mode == Parser.ANKAN_MODE:
                         self.sample_ankan(who)
 
                 # 打牌
@@ -415,7 +415,7 @@ class Format():
                     pai = self.pai(int(elem[1:]))
 
                     # 打牌の抽出
-                    if self.mode == Format.DAHAI_MODE and sum(self.richi[who]) == 0:
+                    if self.mode == Parser.DAHAI_MODE and sum(self.richi[who]) == 0:
                         n_huro = sum(self.huro_type[who])
                         # n_huro = 0 -> 50
                         # n_huro = 1 -> 20
@@ -431,11 +431,11 @@ class Format():
                     self.last_dahai = pai
 
                     # ポンの抽出
-                    if self.mode == Format.PON_MODE:
+                    if self.mode == Parser.PON_MODE:
                         self.sample_pon(pai, who)
 
                     # チーの抽出
-                    if self.mode == Format.CHI_MODE:
+                    if self.mode == Parser.CHI_MODE:
                         self.sample_chi(pai, who)
 
                 # 副露
@@ -458,9 +458,9 @@ class Format():
                     self.who = who
 
 
-Format(
+Parser(
     years=[2015, 2016, 2017],
-    mode=Format.DAHAI_MODE,
+    mode=Parser.DAHAI_MODE,
     max_count=500000,
     debug=False
 )
