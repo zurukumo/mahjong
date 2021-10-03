@@ -1,8 +1,9 @@
 import csv
-import re
 import os
+import re
 from random import randint
-from shanten import calc_shanten, get_yuko
+
+from core.shanten import calc_shanten, get_yuko
 
 
 class Parser():
