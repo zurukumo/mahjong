@@ -1,29 +1,18 @@
 from random import shuffle
 
 from .const import Const
-from .human import Human
 from .kago import Kago
 
 
 class GameAction:
-    def start_game(self, mode=Const.AUTO_MODE, player=None):
-        self.mode = mode
-
+    def start_game(self, player=None):
         # Player関連
-        self.players = []
-        if mode == Const.AUTO_MODE:
-            if player is not None:
-                self.players.append(player)
-            else:
-                self.players.append(Kago(id=0, game=self))
-            self.players.append(Kago(id=1, game=self))
-            self.players.append(Kago(id=2, game=self))
-            self.players.append(Kago(id=3, game=self))
-        else:
-            self.players.append(Human(id=0, game=self))
-            self.players.append(Kago(id=1, game=self))
-            self.players.append(Kago(id=2, game=self))
-            self.players.append(Kago(id=3, game=self))
+        self.players = [
+            Kago(id=0, game=self),
+            Kago(id=1, game=self),
+            Kago(id=2, game=self),
+            Kago(id=3, game=self)
+        ]
 
         # 半荘関連
         self.kyoku = 0
@@ -51,10 +40,6 @@ class GameAction:
 
         # 手番設定(最初は1引く)
         self.teban = (self.kyoku - 1) % 4
-
-        # ダミーデータ生成
-        self.dummy = [136 + i for i in range(136)]
-        shuffle(self.dummy)
 
         # 山生成
         self.yama = [i for i in range(136)]

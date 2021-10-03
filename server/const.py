@@ -1,9 +1,4 @@
 class Const:
-    # ゲームのモード
-    NORMAL_MODE = 0
-    VISIBLE_MODE = 1
-    AUTO_MODE = 2
-
     # ステート
     INITIAL_STATE = 'INITIAL'
     KYOKU_START_STATE = 'KYOKUSTART'

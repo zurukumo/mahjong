@@ -20,9 +20,6 @@ class PlayerAction:
             if i < self.game.n_dora:
                 doras.append(self.game.dora[i])
                 uradoras.append(self.game.dora[i + 5])
-            else:
-                doras.append(self.game.make_dummy(self.game.dora[i]))
-                uradoras.append(self.game.make_dummy(self.game.dora[i + 5]))
 
         score_movements = agari.score_movements
         for i, score_movement in enumerate(score_movements):
@@ -90,12 +87,6 @@ class PlayerAction:
                 doras.append(self.game.dora[i])
                 if self.is_richi_complete:
                     uradoras.append(self.game.dora[i + 5])
-                else:
-                    uradoras.append(self.game.make_dummy(self.game.dora[i + 5]))
-
-            else:
-                doras.append(self.game.make_dummy(self.game.dora[i]))
-                uradoras.append(self.game.make_dummy(self.game.dora[i + 5]))
 
         score_movements = agari.score_movements
         for i, score_movement in enumerate(score_movements):
