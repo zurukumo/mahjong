@@ -26,10 +26,11 @@ class PlayerAction:
         self.game.kyotaku = 0
         if self.position == self.game.kyoku % 4:
             self.game.honba += 1
+            self.game.renchan = True
         else:
             self.game.honba = 0
-        if self.position != self.game.kyoku % 4:
             self.game.kyoku += 1
+            self.game.renchan = False
 
     def tsumo(self):
         pai = self.game.yama.pop()
@@ -88,10 +89,11 @@ class PlayerAction:
         self.game.kyotaku = 0
         if self.position == self.game.kyoku % 4:
             self.game.honba += 1
+            self.game.renchan = True
         else:
             self.game.honba = 0
-        if self.position != self.game.kyoku % 4:
             self.game.kyoku += 1
+            self.game.renchan = False
 
     def pon(self, pais, pai):
         for i in pais:
