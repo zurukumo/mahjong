@@ -24,6 +24,7 @@ class GameAction:
             player.position = i
 
         self.state = Const.KYOKU_START_STATE
+        self.renchan = False
         self.input = None
 
     def start_kyoku(self):
@@ -106,9 +107,31 @@ class GameAction:
         self.honba += 1
         if not is_tenpais[self.kyoku % 4]:
             self.kyoku += 1
+            self.renchan = False
+        else:
+            self.renchan = True
 
     def next_kyoku(self):
         if self.state == Const.AGARI_STATE:
             self.state = Const.KYOKU_START_STATE
         elif self.state == Const.RYUKYOKU_STATE:
             self.state = Const.KYOKU_START_STATE
+
+    def check_game_end(self):
+        # 箱下がいる
+        if any(bool(self.scores[i] < 0) for i in range(4)):
+            return True
+
+        # 南4局が終わっていて、3万点を超えている人がいる
+        if self.kyoku >= 8 and any(bool(self.scores[i] >= 30000) for i in range(4)):
+            return True
+
+        # オーラス上がり止め、テンパイ止め
+        if self.kyoku == 7 and self.renchan and max(self.scores) == self.scores[3]:
+            return True
+
+        # 北入
+        if self.kyoku >= 12:
+            return True
+
+        return False

@@ -5,7 +5,7 @@ class GameRoutine:
     def next(self):
         # 局開始状態
         if self.state == Const.KYOKU_START_STATE:
-            if self.kyoku >= 8 or any(bool(self.scores[i] < 0) for i in range(4)):
+            if self.check_game_end():
                 self.state = Const.SYUKYOKU_STATE
                 return True
 
