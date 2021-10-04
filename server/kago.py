@@ -17,7 +17,7 @@ class Kago(Player):
         super().__init__(*args, **kwargs)
         self.type = 'kago'
 
-    def make_input(self):
+    def update_input(self):
         # 手牌
         tehai = [0] * 34
         for pai in self.tehai:
@@ -88,8 +88,7 @@ class Kago(Player):
                     if row[c * 34 + h] >= w:
                         x[h][w][c] = 1
 
-        x = np.array([x], np.float32)
-        return x
+        self.input = np.array([x], np.float32)
 
     def debug(self, x):
         jp = ['1m', '2m', '3m', '4m', '5m', '6m', '7m', '8m', '9m',
@@ -142,8 +141,7 @@ class Kago(Player):
             return False
 
     def decide_ankan(self):
-        x = self.make_input()
-        y = Kago.ANKAN_NETWORK.predict(x)[0]
+        y = Kago.ANKAN_NETWORK.predict(self.input)[0]
         mk, mv = None, -float('inf')
 
         for i in range(2):
@@ -167,8 +165,7 @@ class Kago(Player):
         if not any([self.can_richi_declare(dahai) for dahai in self.tehai]):
             return False
 
-        x = self.make_input()
-        y = Kago.RICHI_NETWORK.predict(x)[0]
+        y = Kago.RICHI_NETWORK.predict(self.input)[0]
 
         if y[1] > y[0]:
             self.richi_declare()
@@ -177,8 +174,7 @@ class Kago(Player):
             return False
 
     def decide_dahai(self):
-        x = self.make_input()
-        y = Kago.DAHAI_NETWORK.predict(x)[0]
+        y = Kago.DAHAI_NETWORK.predict(self.input)[0]
         mk, mv = -1, -float('inf')
 
         for i in range(34):
@@ -202,8 +198,7 @@ class Kago(Player):
             return False
 
     def decide_pon(self):
-        x = self.make_input()
-        y = Kago.PON_NETWORK.predict(x)[0]
+        y = Kago.PON_NETWORK.predict(self.input)[0]
         mk, mv = None, -float('inf')
 
         last_dahai = self.game.last_dahai
@@ -227,8 +222,7 @@ class Kago(Player):
             return False
 
     def decide_chi(self):
-        x = self.make_input()
-        y = Kago.CHI_NETWORK.predict(x)[0]
+        y = Kago.CHI_NETWORK.predict(self.input)[0]
         mk, mv = None, -float('inf')
 
         last_dahai = self.game.last_dahai
