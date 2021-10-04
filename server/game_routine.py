@@ -1,7 +1,5 @@
 from .const import Const
 
-# TODO ダブロン検証
-
 
 class GameRoutine:
     def next(self):
@@ -33,6 +31,9 @@ class GameRoutine:
             # ツモ
             player.tsumo()
 
+            # input更新
+            player.update_input()
+
             # ツモ和するかどうか
             if player.decide_tsumoho():
                 self.state = Const.AGARI_STATE
@@ -59,6 +60,10 @@ class GameRoutine:
 
         # 鳴き状態
         elif self.state == Const.NAKI_STATE:
+            # input更新
+            for player in self.prange()[1:]:
+                player.update_input()
+
             # ロン和するかどうか(重複あり)
             flg = False
             for player in self.prange()[1:]:
@@ -102,4 +107,5 @@ class GameRoutine:
 
         # 終局状態
         elif self.state == Const.SYUKYOKU_STATE:
-            pass
+            self.start_game()
+            return True

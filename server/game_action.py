@@ -24,6 +24,7 @@ class GameAction:
             player.position = i
 
         self.state = Const.KYOKU_START_STATE
+        self.input = None
 
     def start_kyoku(self):
         # 各プレイヤーの手牌・河・副露の初期化
