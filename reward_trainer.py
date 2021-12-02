@@ -18,7 +18,7 @@ model = models.Sequential([
 
 model.compile(optimizer='adam',
               loss='mse',
-              metrics=['accuracy', 'mae'])
+              metrics=['accuracy', 'mae', 'mse'])
 
 # データ準備
 x = []

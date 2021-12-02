@@ -2,6 +2,7 @@ from random import shuffle
 
 from .const import Const
 from .kago import Kago
+from time import time
 
 
 class GameAction:
@@ -26,6 +27,8 @@ class GameAction:
         self.state = Const.KYOKU_START_STATE
         self.renchan = False
         self.input = None
+
+        self.time = time()
 
     def start_kyoku(self):
         # 各プレイヤーの手牌・河・副露の初期化

@@ -1,4 +1,5 @@
 from .const import Const
+from time import time
 
 
 class GameRoutine:
@@ -8,6 +9,11 @@ class GameRoutine:
             if self.check_game_end():
                 self.state = Const.SYUKYOKU_STATE
                 return True
+
+            print(
+                "{}{}局 {}本場".format('東南西北'[self.kyoku // 4], self.kyoku % 4 + 1, self.honba),
+                self.scores,
+            )
 
             self.start_kyoku()
 
@@ -107,5 +113,9 @@ class GameRoutine:
 
         # 終局状態
         elif self.state == Const.SYUKYOKU_STATE:
+            print("最終スコア", self.scores)
+            print("{}秒かかりました".format(time() - self.time))
+            print()
+            print()
             self.start_game()
             return True
