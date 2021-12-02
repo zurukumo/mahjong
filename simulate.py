@@ -1,3 +1,5 @@
+from time import sleep, time
+
 from server.game import Game
 
 game = Game(debug=True)
@@ -9,7 +11,7 @@ def draw_board():
     board = [[' '] * W for _ in range(H)]
 
     tehai_start = ((H - 1, 1), (H - 2, W - 1), (0, W - 2), (1, 0))
-    kawa_start = ((H - 5, W // 2 - 2), (H // 2 - 2, W - 5), (5, W // 2 + 1), (H // 2 - 1, 5))
+    kawa_start = ((H - 5, W // 2 - 2), (H // 2 + 2, W - 5), (5, W // 2 + 1), (H // 2 - 1, 5))
     move = ((0, 1), (-1, 0), (0, -1), (1, 0))
     shift = ((1, -6), (6, 1), (-1, 6), (-6, -1))
     color = (
@@ -64,9 +66,15 @@ def draw_board():
     for b in board:
         print(*b)
     print("=" * W)
+    sleep(0.2)
 
 
+p = time()
 while True:
+    # state = game.state
     game.next()
-    draw_board()
+    # c = time()
+    # print("{}\t{}".format(state, c - p))
+    # p = c
+    # draw_board()
     # input()
