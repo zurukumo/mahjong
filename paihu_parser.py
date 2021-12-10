@@ -26,7 +26,7 @@ class Parser():
         self.max_count = max_count
         self.debug = debug
         for year in years:
-            file_dir = './xml' + str(year)
+            file_dir = './paihus/xml' + str(year)
             for filename in os.listdir(file_dir):
                 self.filename = filename
                 self.ts = -1
@@ -254,7 +254,7 @@ class Parser():
         elif self.mode == Parser.MINKAN_MODE:
             output_file = 'minkan.csv'
 
-        with open(output_file, 'a') as f:
+        with open('./datasets/' + output_file, 'a') as f:
             writer = csv.writer(f)
             x = [y]
             # 手牌(1)
@@ -275,13 +275,19 @@ class Parser():
             for i in range(who + 1, who + 4):
                 i = i % 4
                 x += self.richi[i]
-            # 場風(1)
-            x += self.bakaze
-            # 自風(1)
-            x += self.zikaze[who]
+            # 局数(1)
+            x += self.kyoku
+            # 座順(1)
+            x += [4 if i == who else 0 for i in range(34)]
+
+            # 点数状況(4)
+            for i in range(who, who + 4):
+                i = i % 4
+                x += self.ten[i]
 
             # 最後の打牌(1)
             x += [4 if i == self.last_dahai else 0 for i in range(34)]
+
             writer.writerow(x)
 
             # デバッグ開始
@@ -329,16 +335,16 @@ class Parser():
                     print('リーチ:', debug)
 
                 debug = ''
-                for bakaze in dx[14:15]:
+                for kyoku in dx[14:15]:
                     for i in range(34):
-                        debug += self.jp(i) * bakaze[i]
-                print('場風:', debug)
+                        debug += self.jp(i) * kyoku[i]
+                print('局数:', debug)
 
                 debug = ''
-                for zikaze in dx[15:16]:
+                for zajun in dx[15:16]:
                     for i in range(34):
-                        debug += self.jp(i) * zikaze[i]
-                print('自風:', debug)
+                        debug += self.jp(i) * zajun[i]
+                print('座順:', debug)
 
                 debug = ''
                 for last_dahai in dx[16:17]:
@@ -372,8 +378,8 @@ class Parser():
                     self.huro_type = [[0] * 4 for _ in range(4)]
                     self.dora = [0] * 34
                     self.richi = [[0] * 34 for _ in range(4)]
-                    self.bakaze = [0] * 34
-                    self.zikaze = [[0] * 34 for _ in range(4)]
+                    self.kyoku = [0] * 34
+                    self.ten = [[0] * 34 for _ in range(4)]
 
                     for who in range(4):
                         for pai in map(int, attr['hai' + str(who)].split(',')):
@@ -382,10 +388,11 @@ class Parser():
                                 self.aka[who][self.pai(pai)] = 4
 
                     kyoku, honba, kyotaku, _, _, dora = map(int, attr['seed'].split(','))
+                    self.kyoku[kyoku] = 4
                     self.dora[self.pai(dora)] += 1
-                    self.bakaze[27 + kyoku // 4] = 4
-                    for who in range(4):
-                        self.zikaze[who][27 + (who - kyoku) % 4] = 4
+
+                    for who, ten in enumerate(map(int, attr['ten'].split(','))):
+                        self.ten[who][min(33, ten // 20)] = 4
 
                     self.last_dahai = -1
                     self.last_tsumo = -1
@@ -461,7 +468,7 @@ class Parser():
 
 Parser(
     years=[2015, 2016, 2017],
-    mode=Parser.DAHAI_MODE,
-    max_count=500000,
+    mode=Parser.RICHI_MODE,
+    max_count=300000,
     debug=False
 )
