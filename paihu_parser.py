@@ -255,39 +255,58 @@ class Parser():
 
         with open('./datasets/' + output_file, 'a') as f:
             writer = csv.writer(f)
-            x = [y]
-            # 手牌(1)
-            x += self.tehai[who]
-            # 赤(1)
-            x += self.aka[who]
-            # 河(4)
-            for i in range(who, who + 4):
-                i = i % 4
-                x += self.kawa[i]
-            # 副露(4)
-            for i in range(who, who + 4):
-                i = i % 4
-                x += self.huro[i]
-            # ドラ(1)
-            x += self.dora
-            # リーチ(3)
-            for i in range(who + 1, who + 4):
-                i = i % 4
-                x += self.richi[i]
-            # 局数(1)
-            x += self.kyoku
-            # 座順(1)
-            x += [4 if i == who else 0 for i in range(34)]
 
-            # 点数状況(4)
-            for i in range(who, who + 4):
-                i = i % 4
-                x += self.ten[i]
+            x = []
 
-            # 最後の打牌(1)
-            x += [4 if i == self.last_dahai else 0 for i in range(34)]
+            # 手牌(4)
+            for n in range(1, 4 + 1):
+                x += [1 if self.tehai[who][i] >= n else 0 for i in range(34)]
 
-            writer.writerow(x)
+            # 赤(3)
+            x += [1] * 34 if self.aka[who][4] != 0 else [0] * 34
+            x += [1] * 34 if self.aka[who][4 + 9] != 0 else [0] * 34
+            x += [1] * 34 if self.aka[who][4 + 9 + 9] != 0 else [0] * 34
+
+            # # 河(20 * 4)
+            # for i in range(who, who + 4):
+            #     i = i % 4
+            #     for j in range(20):
+            #         tmp = [0] * 34
+            #         if len(self.kawa[i]) < j:
+            #             tmp[self.kawa[i][j]] = 1
+
+            #         x += tmp
+            # # 副露(4 * 4 * 4)
+            # for i in range(who, who + 4):
+            #     for j in range(4)
+
+            #     i = i % 4
+            #     x += self.huro[i]
+            # # ドラ(1)
+            # for n in range(1, 4 + 1):
+            #     x += [1 if self.dora[i] >= n else 0 for i in range(34)]
+            # # リーチ(3)
+            # for i in range(who + 1, who + 4):
+            #     i = i % 4
+            #     x += self.richi[i]
+            # # 局数(1)
+            # x += self.kyoku
+            # # 座順(1)
+            # x += [4 if i == who else 0 for i in range(34)]
+            # # 点数状況(4)
+            # for i in range(who, who + 4):
+            #     i = i % 4
+            #     x += self.ten[i]
+
+            # # 最後の打牌(1)
+            # x += [4 if i == self.last_dahai else 0 for i in range(34)]
+
+            sparse_keys = []
+            for k, v in enumerate(x):
+                if v == 1:
+                    sparse_keys.append(k)
+
+            writer.writerow([y] + sparse_keys)
 
             # デバッグ開始
             if self.debug:
