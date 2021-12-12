@@ -264,14 +264,15 @@ class Parser():
             x += [1] * 34 if self.aka[who][4 + 9 + 9] != 0 else [0] * 34
 
             # # 河(20 * 4)
-            # for i in range(who, who + 4):
-            #     i = i % 4
-            #     for j in range(20):
-            #         tmp = [0] * 34
-            #         if len(self.kawa[i]) < j:
-            #             tmp[self.kawa[i][j]] = 1
+            for i in range(who, who + 4):
+                i = i % 4
+                for j in range(20):
+                    tmp = [0] * 34
+                    if j < len(self.kawa[i]):
+                        tmp[self.kawa[i][j]] = 1
 
-            #         x += tmp
+                    x += tmp
+
             # # 副露(4 * 4 * 4)
             # for i in range(who, who + 4):
             #     for j in range(4)
@@ -331,7 +332,7 @@ class Parser():
                     self.ts += 1
                     self.tehai = [[0] * 34 for _ in range(4)]
                     self.aka = [[0] * 34 for _ in range(4)]
-                    self.kawa = [[0] * 34 for _ in range(4)]
+                    self.kawa = [[] for _ in range(4)]
                     self.huro = [[0] * 34 for _ in range(4)]
                     self.huro_type = [[0] * 4 for _ in range(4)]
                     self.dora = [0] * 34
@@ -392,7 +393,7 @@ class Parser():
                             self.output(who, pai)
 
                     # 打牌の処理
-                    self.kawa[who][pai] += 1
+                    self.kawa[who].append(pai)
                     self.tehai[who][pai] -= 1
                     self.last_dahai = pai
 

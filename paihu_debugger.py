@@ -12,5 +12,13 @@ def debug(x, y):
             print('手牌')
         if i == 4:
             print('赤牌')
+        if i == 7:
+            print('河1')
+        if i == 27:
+            print('河2')
+        if i == 47:
+            print('河3')
+        if i == 67:
+            print('河4')
 
         print(x[i * 34:(i + 1) * 34])
