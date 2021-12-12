@@ -307,6 +307,9 @@ class Parser():
                 if v == 1:
                     sparse_keys.append(k)
 
+            # 1行目にはチャネル数を書き込む
+            if self.count == 0:
+                writer.writerow([len(x) // 34])
             writer.writerow([y] + sparse_keys)
 
             # デバッグ開始
