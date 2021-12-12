@@ -4,6 +4,7 @@ import re
 from random import randint
 
 from core.shanten import calc_shanten, get_yuko
+from paihu_debugger import debug
 
 
 class Parser():
@@ -311,6 +312,7 @@ class Parser():
             # デバッグ開始
             if self.debug:
                 print(self.url())
+                debug(x)
                 input()
 
         self.count += 1
