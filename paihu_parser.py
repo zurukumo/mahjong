@@ -293,66 +293,6 @@ class Parser():
             # デバッグ開始
             if self.debug:
                 print(self.url())
-
-                dx = []
-                for i in range(len(x) // 34):
-                    dx.append(x[i * 34 + 1:(i + 1) * 34 + 1])
-
-                debug = ''
-                for tehai in dx[:1]:
-                    for i in range(34):
-                        debug += self.jp(i) * tehai[i]
-                print('手牌:', debug)
-
-                debug = ''
-                for aka in dx[1:2]:
-                    for i in range(34):
-                        debug += self.jp(i) * aka[i]
-                print('赤牌:', debug)
-
-                for kawa in dx[2:6]:
-                    debug = ''
-                    for i in range(34):
-                        debug += self.jp(i) * kawa[i]
-                    print('河:', debug)
-
-                for huro in dx[6:10]:
-                    debug = ''
-                    for i in range(34):
-                        debug += self.jp(i) * huro[i]
-                    print('副露:', debug)
-
-                debug = ''
-                for dora in dx[10:11]:
-                    for i in range(34):
-                        debug += self.jp(i) * dora[i]
-                print('ドラ:', debug)
-
-                for richi in dx[11:14]:
-                    debug = ''
-                    for i in range(34):
-                        debug += self.jp(i) * richi[i]
-                    print('リーチ:', debug)
-
-                debug = ''
-                for kyoku in dx[14:15]:
-                    for i in range(34):
-                        debug += self.jp(i) * kyoku[i]
-                print('局数:', debug)
-
-                debug = ''
-                for zajun in dx[15:16]:
-                    for i in range(34):
-                        debug += self.jp(i) * zajun[i]
-                print('座順:', debug)
-
-                debug = ''
-                for last_dahai in dx[16:17]:
-                    for i in range(34):
-                        debug += self.jp(i) * last_dahai[i]
-                print('最後の打牌:', debug)
-
-                print('結果:', self.jp(y) if self.mode == Parser.DAHAI_MODE else y)
                 input()
 
         self.count += 1
