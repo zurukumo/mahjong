@@ -36,15 +36,13 @@ for file_name in sys.argv[1:]:
     t = []
     with open('./datasets/' + file_name + '.csv') as f:
         reader = csv.reader(f, delimiter=",")
+        n_channel = int(reader.__next__()[0])
         for row in reader:
             row = list(map(int, row))
             tt, row = row[0], row[1:]
-            xx = [[[0] * (len(row) // 34) for _ in range(4)] for _ in range(34)]
-            for c in range(len(row) // 34):
-                for w in range(4):
-                    for h in range(34):
-                        if row[c * 34 + h] >= w:
-                            xx[h][w][c] = 1
+            xx = [[[0] * n_channel for _ in range(34)]]
+            for v in row:
+                xx[0][v % 34][v // 34] = 1
 
             x.append(xx)
             t.append(tt)
