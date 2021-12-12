@@ -36,11 +36,6 @@ class Parser():
     def url(self):
         return 'https://tenhou.net/0/?log={}&ts={}'.format(self.filename.replace('.xml', ''), self.ts)
 
-    def jp(self, c):
-        return ['1m', '2m', '3m', '4m', '5m', '6m', '7m', '8m', '9m',
-                '1p', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p',
-                '1s', '2s', '3s', '4s', '5s', '6s', '7s', '8s', '9s',
-                '東', '南', '西', '北', '白', '発', '中', '-'][c]
 
     def pai(self, x):
         return x // 4
@@ -315,7 +310,7 @@ class Parser():
             # デバッグ開始
             if self.debug:
                 print(self.url())
-                debug(x)
+                debug(x, y)
                 input()
 
         self.count += 1
