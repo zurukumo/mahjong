@@ -171,8 +171,7 @@ class Parser():
             else:
                 y = 0
 
-            if y != 0 or randint(1, 8) == 1:
-                self.output(i, y)
+            self.output(i, y)
 
     def m(self, who, m):
         if self.is_ankan(m):
