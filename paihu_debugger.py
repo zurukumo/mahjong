@@ -25,3 +25,7 @@ def debug(x, y):
     print('河2:', '>'.join([jps(x[i * 34:(i + 1) * 34])for i in range(27, 47)]))
     print('河3:', '>'.join([jps(x[i * 34:(i + 1) * 34])for i in range(47, 67)]))
     print('河4:', '>'.join([jps(x[i * 34:(i + 1) * 34])for i in range(67, 87)]))
+    print('副露1:', jps(x[87 * 34:91 * 34]))
+    print('副露2:', jps(x[91 * 34:95 * 34]))
+    print('副露3:', jps(x[95 * 34:99 * 34]))
+    print('副露4:', jps(x[99 * 34:103 * 34]))
