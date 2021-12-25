@@ -278,9 +278,10 @@ class Parser():
                 for j in range(1, 4 + 1):
                     x += [1 if self.huro[i][k] >= j else 0 for k in range(34)]
 
-            # # ドラ(1)
-            # for n in range(1, 4 + 1):
-            #     x += [1 if self.dora[i] >= n else 0 for i in range(34)]
+            # ドラ(4)
+            for i in range(1, 4 + 1):
+                x += [1 if self.dora[j] >= i else 0 for j in range(34)]
+
             # # リーチ(3)
             # for i in range(who + 1, who + 4):
             #     i = i % 4
