@@ -294,8 +294,13 @@ class Parser():
                 else:
                     x += [0] * 34
 
-            # # 座順(1)
-            # x += [4 if i == who else 0 for i in range(34)]
+            # 座順(4)
+            for i in range(4):
+                if i == who:
+                    x += [1] * 34
+                else:
+                    x += [0] * 34
+
             # # 点数状況(4)
             # for i in range(who, who + 4):
             #     i = i % 4
