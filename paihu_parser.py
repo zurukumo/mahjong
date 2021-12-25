@@ -36,7 +36,6 @@ class Parser():
     def url(self):
         return 'https://tenhou.net/0/?log={}&ts={}'.format(self.filename.replace('.xml', ''), self.ts)
 
-
     def pai(self, x):
         return x // 4
 
@@ -255,15 +254,15 @@ class Parser():
             x = []
 
             # 手牌(4)
-            for n in range(1, 4 + 1):
-                x += [1 if self.tehai[who][i] >= n else 0 for i in range(34)]
+            for i in range(1, 4 + 1):
+                x += [1 if self.tehai[who][j] >= i else 0 for j in range(34)]
 
             # 赤(3)
             x += [1] * 34 if self.aka[who][4] != 0 else [0] * 34
             x += [1] * 34 if self.aka[who][4 + 9] != 0 else [0] * 34
             x += [1] * 34 if self.aka[who][4 + 9 + 9] != 0 else [0] * 34
 
-            # # 河(20 * 4)
+            # 河(20 * 4)
             for i in range(who, who + 4):
                 i = i % 4
                 for j in range(20):
@@ -273,12 +272,12 @@ class Parser():
 
                     x += tmp
 
-            # # 副露(4 * 4 * 4)
-            # for i in range(who, who + 4):
-            #     for j in range(4)
+            # 副露(4 * 4)
+            for i in range(who, who + 4):
+                i = i % 4
+                for j in range(1, 4 + 1):
+                    x += [1 if self.huro[i][k] >= j else 0 for k in range(34)]
 
-            #     i = i % 4
-            #     x += self.huro[i]
             # # ドラ(1)
             # for n in range(1, 4 + 1):
             #     x += [1 if self.dora[i] >= n else 0 for i in range(34)]
@@ -427,7 +426,7 @@ class Parser():
 
 Parser(
     years=[2015, 2016, 2017],
-    mode=Parser.RICHI_MODE,
+    mode=Parser.DAHAI_MODE,
     max_count=300000,
     debug=False
 )
