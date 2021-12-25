@@ -61,7 +61,7 @@ class Parser():
         elem, _ = self.actions[self.action_i + 1]
 
         # リーチ中
-        if sum(self.richi[who]) >= 1:
+        if sum(self.richi[who]) >= 34:
             return
 
         # 暗槓以外の副露をしている
@@ -85,7 +85,7 @@ class Parser():
         attr = dict(re.findall(r'\s?(.*?)="(.*?)"', attr))
 
         # リーチ中
-        if sum(self.richi[who]) >= 1:
+        if sum(self.richi[who]) >= 34:
             if self.tehai[who][self.last_tsumo] != 4:
                 return
 
@@ -127,7 +127,7 @@ class Parser():
         for i in range(who + 1, who + 4):
             i = i % 4
             # リーチ中
-            if sum(self.richi[i]) >= 1:
+            if sum(self.richi[i]) >= 34:
                 return
             # 次がロン
             if elem == 'AGARI' and attr['who'] != attr['fromWho']:
@@ -146,7 +146,7 @@ class Parser():
         i = (who + 1) % 4
 
         # 字牌 or リーチ中
-        if pai >= 27 or sum(self.richi[i]) >= 1:
+        if pai >= 27 or sum(self.richi[i]) >= 34:
             return
 
         # 次がロン
@@ -282,10 +282,10 @@ class Parser():
             for i in range(1, 4 + 1):
                 x += [1 if self.dora[j] >= i else 0 for j in range(34)]
 
-            # # リーチ(3)
-            # for i in range(who + 1, who + 4):
-            #     i = i % 4
-            #     x += self.richi[i]
+            # リーチ(4)
+            for i in range(who, who + 4):
+                i = i % 4
+                x += self.richi[i]
             # # 局数(1)
             # x += self.kyoku
             # # 座順(1)
@@ -413,7 +413,7 @@ class Parser():
                 # リーチ成立
                 elif elem == 'REACH' and attr['step'] == '2':
                     who = int(attr['who'])
-                    self.richi[who][self.last_dahai] = 4
+                    self.richi[who] = [1] * 34
 
                 elif elem == 'DORA':
                     pai = self.pai(int(attr['hai']))
