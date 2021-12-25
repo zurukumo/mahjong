@@ -286,8 +286,14 @@ class Parser():
             for i in range(who, who + 4):
                 i = i % 4
                 x += self.richi[i]
-            # # 局数(1)
-            # x += self.kyoku
+
+            # 局数(12)
+            for i in range(12):
+                if i == min(self.kyoku, 11):
+                    x += [1] * 34
+                else:
+                    x += [0] * 34
+
             # # 座順(1)
             # x += [4 if i == who else 0 for i in range(34)]
             # # 点数状況(4)
@@ -337,7 +343,7 @@ class Parser():
                     self.huro_type = [[0] * 4 for _ in range(4)]
                     self.dora = [0] * 34
                     self.richi = [[0] * 34 for _ in range(4)]
-                    self.kyoku = [0] * 34
+                    self.kyoku = None
                     self.ten = [[0] * 34 for _ in range(4)]
 
                     for who in range(4):
@@ -347,7 +353,7 @@ class Parser():
                                 self.aka[who][self.pai(pai)] = 4
 
                     kyoku, honba, kyotaku, _, _, dora = map(int, attr['seed'].split(','))
-                    self.kyoku[kyoku] = 4
+                    self.kyoku = kyoku
                     self.dora[self.pai(dora)] += 1
 
                     for who, ten in enumerate(map(int, attr['ten'].split(','))):
