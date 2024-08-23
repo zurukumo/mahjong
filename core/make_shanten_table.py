@@ -1,9 +1,8 @@
-import pickle
 import itertools
+import pickle
+
 
 # 面子の抜き出し
-
-
 def get_mentsu(tehai, n_mentsu, start):
     max = [[0, 0], [0, 0]]
 
@@ -43,9 +42,8 @@ def get_mentsu(tehai, n_mentsu, start):
 
     return max
 
+
 # 塔子の抜き出し
-
-
 def get_tatsu(tehai, n_tatsu, start):
     max = 0
 
@@ -89,9 +87,8 @@ def get_tatsu(tehai, n_tatsu, start):
 
     return max
 
+
 # 向聴テーブルの作成
-
-
 def make_shanten_table():
     shanten_table = dict()
 
