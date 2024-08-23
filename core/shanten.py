@@ -1,5 +1,5 @@
-﻿import pickle
-import itertools
+﻿import itertools
+import pickle
 
 with open('core/shanten_table.pickle', 'rb') as f:
     shanten_table = pickle.load(f)
@@ -32,7 +32,6 @@ def calc_shanten(tehai, n_huro):
 
 # 一般手の一時的な向聴数の計算
 def get_temporary_shanten(tehai, n_huro):
-    b = (13 - sum(tehai) - n_huro * 3) // 3
     m = get_shanten_from_table(tehai[0:9])
     p = get_shanten_from_table(tehai[9:18])
     s = get_shanten_from_table(tehai[18:27])
@@ -48,7 +47,7 @@ def get_temporary_shanten(tehai, n_huro):
     min_shanten = 8
 
     for m, p, s in itertools.product(m, p, s):
-        n_mentsu = b + m[0] + p[0] + s[0] + z[0] + n_huro
+        n_mentsu = m[0] + p[0] + s[0] + z[0] + n_huro
         n_tatsu = m[1] + p[1] + s[1] + z[1]
 
         # 塔子オーバー時の補正
