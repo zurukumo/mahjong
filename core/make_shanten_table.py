@@ -4,43 +4,40 @@ import pickle
 
 # 面子の抜き出し
 def get_mentsu(tehai, n_mentsu, start):
-    max = [[0, 0], [0, 0]]
+    max1, max2 = [0, 0], [0, 0]
 
     for i in range(start, 9):
-        if tehai[i] == 0:
-            continue
-
         # 順子を抜き出し
-        if i <= 6 and tehai[i+1] and tehai[i+2]:
+        if i <= 6 and tehai[i] >= 1 and tehai[i+1] >= 1 and tehai[i+2] >= 1:
             tehai[i] -= 1
             tehai[i+1] -= 1
             tehai[i+2] -= 1
-            n = get_mentsu(tehai, n_mentsu + 1, i)
+            cur1, cur2 = get_mentsu(tehai, n_mentsu + 1, i)
             tehai[i] += 1
             tehai[i+1] += 1
             tehai[i+2] += 1
 
-            if n[0][0] * 2 + n[0][1] > max[0][0] * 2 + max[0][1]:
-                max[0] = n[0]
-            if n[1][0] * 8 + n[1][1] > max[1][0] * 8 + max[1][1]:
-                max[1] = n[1]
+            if cur1[0] * 2 + cur1[1] > max1[0] * 2 + max1[1]:
+                max1 = cur1
+            if cur2[0] * 8 + cur2[1] > max2[0] * 8 + max2[1]:
+                max2 = cur2
 
         # 刻子を抜き出し
         if tehai[i] >= 3:
             tehai[i] -= 3
-            n = get_mentsu(tehai, n_mentsu + 1, i)
+            cur1, cur2 = get_mentsu(tehai, n_mentsu + 1, i)
             tehai[i] += 3
 
-            if n[0][0] * 2 + n[0][1] > max[0][0] * 2 + max[0][1]:
-                max[0] = n[0]
-            if n[1][0] * 8 + n[1][1] > max[1][0] * 8 + max[1][1]:
-                max[1] = n[1]
+            if cur1[0] * 2 + cur1[1] > max1[0] * 2 + max1[1]:
+                max1 = cur1
+            if cur2[0] * 8 + cur2[1] > max2[0] * 8 + max2[1]:
+                max2 = cur2
 
-    if max == [[0, 0], [0, 0]]:
+    if max1 == [0, 0] and max2 == [0, 0]:
         n_tatsu = get_tatsu(tehai, 0, 0)
-        return [[n_mentsu, n_tatsu], [n_mentsu, n_tatsu]]
+        return [n_mentsu, n_tatsu], [n_mentsu, n_tatsu]
 
-    return max
+    return max1, max2
 
 
 # 塔子の抜き出し
@@ -48,11 +45,8 @@ def get_tatsu(tehai, n_tatsu, start):
     max = 0
 
     for i in range(start, 9):
-        if tehai[i] == 0:
-            continue
-
         # 両面・辺張塔子を抜き出し
-        if i <= 7 and tehai[i+1]:
+        if i <= 7 and tehai[i] >= 1 and tehai[i+1] >= 1:
             tehai[i] -= 1
             tehai[i+1] -= 1
             n = get_tatsu(tehai, n_tatsu + 1, i)
@@ -63,7 +57,7 @@ def get_tatsu(tehai, n_tatsu, start):
                 max = n
 
         # 嵌張塔子を抜き出し
-        if i <= 6 and tehai[i+2]:
+        if i <= 6 and tehai[i] >= 1 and tehai[i+2] >= 1:
             tehai[i] -= 1
             tehai[i+2] -= 1
             n = get_tatsu(tehai, n_tatsu + 1, i)
@@ -92,38 +86,19 @@ def get_tatsu(tehai, n_tatsu, start):
 def make_shanten_table():
     shanten_table = dict()
 
-    for tehai in list(itertools.product([0, 1, 2, 3, 4], repeat=9)):
-        # タプルをリストに変換
-        tehai = list(tehai)
-
-        # 手牌が14枚より大きい場合はスキップ
+    for tehai in itertools.product([0, 1, 2, 3, 4], repeat=9):
+        # 手牌が14枚より多い場合はスキップ
         if sum(tehai) > 14:
             continue
 
-        mt = get_mentsu(tehai, 0, 0)
+        print(tehai)
 
-        # 面子も塔子も取れない場合はスキップ
-        if mt == [[0, 0], [0, 0]]:
-            continue
+        mt = get_mentsu(list(tehai), 0, 0)
 
-        # mtのパターンAとBが同じ場合はパターンBを省略
-        if mt[0] == mt[1]:
-            mt = [mt[0]]
+        shanten_table[tehai] = mt
 
-        # 手牌列の生成
-        tehai_line = 0
-        for i in tehai:
-            tehai_line *= 10
-            tehai_line += i
-
-        if tehai_line in shanten_table:
-            continue
-
-        shanten_table[tehai_line] = mt
-
-    f = open('shanten_table.pickle', 'wb')
-    pickle.dump(shanten_table, f)
-    f.close()
+    with open('core/shanten_table.pickle', 'wb') as f:
+        pickle.dump(shanten_table, f)
 
 
 make_shanten_table()
