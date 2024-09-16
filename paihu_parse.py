@@ -3,16 +3,18 @@ import os
 import re
 from random import randint
 
+import questionary
+
 from core.shanten import calc_shanten, get_yuko
 from paihu_debugger import debug
 
 
 class PaihuParser():
-    DAHAI_MODE = 0
-    RIICHI_MODE = 1
-    ANKAN_MODE = 2
-    KAKAN_MODE = 3
-    RON_MINKAN_PON_CHII_MODE = 4
+    DAHAI_MODE = "dahai"
+    RIICHI_MODE = "riichi"
+    ANKAN_MODE = "ankan"
+    KAKAN_MODE = "kakan"
+    RON_MINKAN_PON_CHII_MODE = "ron_minkan_pon_chii"
 
     SHUNTSU_TYPE = 0
     MINKO_TYPE = 1
@@ -21,10 +23,10 @@ class PaihuParser():
 
     YEARS = [2015, 2016, 2017]
 
-    def __init__(self, mode=DAHAI_MODE, max_count=1500000, debug=False):
+    def __init__(self, mode=DAHAI_MODE, max_case=1500000, debug=False):
         self.count = 0
         self.mode = mode
-        self.max_count = max_count
+        self.max_case = max_case
         self.debug = debug
         for year in PaihuParser.YEARS:
             file_dir = f'./paihus/xml{year}'
@@ -34,7 +36,7 @@ class PaihuParser():
                 self.parse_xml(f'{file_dir}/{filename}')
 
     def url(self):
-        return 'https://tenhou.net/0/?log={}&ts={}'.format(self.filename.replace('.xml', ''), self.ts)
+        return f'https://tenhou.net/0/?log={self.filename.replace('.xml', '')}&ts={self.ts}'
 
     def pai(self, x):
         return x // 4
@@ -58,7 +60,7 @@ class PaihuParser():
         return self.is_ankan(m) or self.is_kakan(m) or self.is_minkan(m)
 
     def sample_riichi(self, who):
-        elem, _ = self.actions[self.action_i + 1]
+        next_elem, _ = self.actions[self.action_i + 1]
 
         # リーチ中
         if self.riichi[who]:
@@ -71,7 +73,7 @@ class PaihuParser():
             return
 
         if calc_shanten(tehai=self.tehai[who], n_huro=n_ankan) == 0:
-            if elem == 'REACH':
+            if next_elem == 'REACH':
                 y = 1
             else:
                 # ダマテンは継続しがちなので適宜飛ばす
@@ -81,10 +83,9 @@ class PaihuParser():
             self.output(who, y)
 
     def sample_ankan(self, who):
-        elem, attr = self.actions[self.action_i + 1]
-        attr = dict(re.findall(r'\s?(.*?)="(.*?)"', attr))
+        next_elem, next_attr = self.actions[self.action_i + 1]
 
-        # リーチ中
+        # リーチ中(待ちが変わらない暗槓が可能)
         if self.riichi[who]:
             if self.tehai[who][self.last_tsumo] != 4:
                 return
@@ -104,18 +105,18 @@ class PaihuParser():
             if shanten1 != shanten2 or machi1 != machi2:
                 return
 
-            if elem == 'N' and self.is_ankan(int(attr['m'])):
+            if next_elem == 'N' and self.is_ankan(int(next_attr['m'])):
                 self.output(who, 1)
             else:
                 self.output(who, 0)
 
-        # リーチ中じゃない
+        # 非リーチ中
         else:
             for i in range(34):
                 if self.tehai[who][i] != 4:
                     continue
 
-                if elem == 'N' and self.is_ankan(int(attr['m'])):
+                if next_elem == 'N' and self.is_ankan(int(next_attr['m'])):
                     self.output(who, 1)
                 else:
                     if randint(1, 3) == 1:
@@ -136,77 +137,14 @@ class PaihuParser():
                         break
                     if int(attr['who']) == who:
                         y = 1
-            elif next_elem == 'N' and self.is_minkan(int(next_attr['m'])) and int(next_attr['who']) == who:
+            elif next_elem == 'N' and int(next_attr['who']) == who and self.is_minkan(int(next_attr['m'])):
                 y = 2
-            elif next_elem == 'N' and self.is_minko(int(next_attr['m'])) and int(next_attr['who']) == who:
+            elif next_elem == 'N' and int(next_attr['who']) == who and self.is_minko(int(next_attr['m'])):
                 y = 3
-            elif next_elem == 'N' and self.is_shuntsu(int(next_attr['m'])) and int(next_attr['who']) == who:
+            elif next_elem == 'N' and int(next_attr['who']) == who and self.is_shuntsu(int(next_attr['m'])):
                 y = 4 + ((int(next_attr['m']) & 0xFC00) >> 10) % 3
 
             self.output(who, y)
-
-    def m(self, who, m):
-        if self.is_ankan(m):
-            # 暗槓
-            p = ((m & 0xFF00) >> 8) // 4
-            self.huro[who][p] += 4
-            self.tehai[who][p] -= 4
-            self.huro_type[who][PaihuParser.ANKAN_TYPE] += 1
-            # print(self.url())
-            # print('暗槓', self.jp(p))
-            # print('最後の打牌', self.jp(self.last_dahai))
-            # input()
-
-        else:
-            # 順子
-            if self.is_shuntsu(m):
-                p = ((m & 0xFC00) >> 10) // 3
-                p += (p // 7) * 2
-                for i in range(3):
-                    self.huro[who][p + i] += 1
-                    self.tehai[who][p + i] -= 1
-                self.tehai[who][self.last_dahai] += 1
-                self.huro_type[who][PaihuParser.SHUNTSU_TYPE] += 1
-                # print(self.url())
-                # print('順子', self.jp(p))
-                # t = ((m & 0xFC00) >> 10) % 3
-                # print('鳴いた場所', t)
-                # print('最後の打牌', self.jp(self.last_dahai))
-                # input()
-
-            # 明刻
-            elif self.is_minko(m):
-                p = ((m & 0xFE00) >> 9) // 3
-                self.huro[who][p] += 3
-                self.tehai[who][p] -= 3
-                self.tehai[who][self.last_dahai] += 1
-                self.huro_type[who][PaihuParser.MINKO_TYPE] += 1
-                # print(self.url())
-                # print('明刻', self.jp(p))
-                # print('最後の打牌', self.jp(self.last_dahai))
-                # input()
-
-            # 加槓
-            elif self.is_kakan(m) == 1:
-                p = ((m & 0xFE00) >> 9) // 3
-                self.huro[who][p] += 1
-                self.huro_type[who][PaihuParser.MINKO_TYPE] -= 1
-                self.huro_type[who][PaihuParser.MINKAN_TYPE] += 1
-                # print(self.url())
-                # print('加槓', self.jp(p))
-                # input()
-
-            # 大明槓
-            else:
-                p = ((m & 0xFF00) >> 8) // 4
-                self.huro[who][p] += 4
-                self.tehai[who][p] -= 4
-                self.tehai[who][self.last_dahai] += 1
-                self.huro_type[who][PaihuParser.MINKAN_TYPE] += 1
-                # print(self.url())
-                # print('大明槓', self.jp(p))
-                # print('最後の打牌', self.jp(self.last_dahai))
-                # input()
 
     def output(self, who, y):
         # 出力ファイル名の決定
@@ -288,51 +226,10 @@ class PaihuParser():
                 input()
 
         self.count += 1
-        print(self.count, '/', self.max_count)
-        if self.count == self.max_count:
+        print(self.count, '/', self.max_case)
+        if self.count == self.max_case:
             print('終了')
             exit()
-
-    def parse_xml(self, filename):
-        with open(filename, 'r') as xml:
-            self.actions = []
-            for elem, attr in re.findall(r'<(.*?)[ /](.*?)/?>', xml.read()):
-                attr = dict(re.findall(r'\s?(.*?)="(.*?)"', attr))
-                self.actions.append((elem, attr))
-
-            for action_i, (elem, attr) in enumerate(self.actions):
-                self.action_i = action_i
-
-                # 開局
-                if elem == 'INIT':
-                    self.parse_init_tag(attr)
-
-                # ツモ
-                elif re.match(r'[T|U|V|W][0-9]+', elem):
-                    self.parse_tsumo_tag(elem)
-
-                # 打牌
-                elif re.match(r'[D|E|F|G][0-9]+', elem):
-                    self.parse_dahai_tag(elem)
-
-                # 副露
-                elif elem == 'N':
-                    who = int(attr['who'])
-                    self.m(who, int(attr['m']))
-
-                # リーチ成立
-                elif elem == 'REACH' and attr['step'] == '2':
-                    who = int(attr['who'])
-                    self.riichi[who] = True
-
-                elif elem == 'DORA':
-                    pai = self.pai(int(attr['hai']))
-                    self.dora[pai] += 1
-
-                # 和了
-                elif elem == 'AGARI':
-                    who = int(attr['who'])
-                    self.who = who
 
     def parse_init_tag(self, attr):
         self.ts += 1
@@ -403,6 +300,118 @@ class PaihuParser():
         if self.mode == PaihuParser.RON_MINKAN_PON_CHII_MODE:
             self.sample_ron_minkan_pon_chii()
 
+    def parse_huuro_tag(self, attr):
+        who = int(attr['who'])
+        m = int(attr['m'])
+        if self.is_ankan(m):
+            # 暗槓
+            p = ((m & 0xFF00) >> 8) // 4
+            self.huro[who][p] += 4
+            self.tehai[who][p] -= 4
+            self.huro_type[who][PaihuParser.ANKAN_TYPE] += 1
+            # print(self.url())
+            # print('暗槓', self.jp(p))
+            # print('最後の打牌', self.jp(self.last_dahai))
+            # input()
+
+        else:
+            # 順子
+            if self.is_shuntsu(m):
+                p = ((m & 0xFC00) >> 10) // 3
+                p += (p // 7) * 2
+                for i in range(3):
+                    self.huro[who][p + i] += 1
+                    self.tehai[who][p + i] -= 1
+                self.tehai[who][self.last_dahai] += 1
+                self.huro_type[who][PaihuParser.SHUNTSU_TYPE] += 1
+                # print(self.url())
+                # print('順子', self.jp(p))
+                # t = ((m & 0xFC00) >> 10) % 3
+                # print('鳴いた場所', t)
+                # print('最後の打牌', self.jp(self.last_dahai))
+                # input()
+
+            # 明刻
+            elif self.is_minko(m):
+                p = ((m & 0xFE00) >> 9) // 3
+                self.huro[who][p] += 3
+                self.tehai[who][p] -= 3
+                self.tehai[who][self.last_dahai] += 1
+                self.huro_type[who][PaihuParser.MINKO_TYPE] += 1
+                # print(self.url())
+                # print('明刻', self.jp(p))
+                # print('最後の打牌', self.jp(self.last_dahai))
+                # input()
+
+            # 加槓
+            elif self.is_kakan(m) == 1:
+                p = ((m & 0xFE00) >> 9) // 3
+                self.huro[who][p] += 1
+                self.huro_type[who][PaihuParser.MINKO_TYPE] -= 1
+                self.huro_type[who][PaihuParser.MINKAN_TYPE] += 1
+                # print(self.url())
+                # print('加槓', self.jp(p))
+                # input()
+
+            # 大明槓
+            else:
+                p = ((m & 0xFF00) >> 8) // 4
+                self.huro[who][p] += 4
+                self.tehai[who][p] -= 4
+                self.tehai[who][self.last_dahai] += 1
+                self.huro_type[who][PaihuParser.MINKAN_TYPE] += 1
+                # print(self.url())
+                # print('大明槓', self.jp(p))
+                # print('最後の打牌', self.jp(self.last_dahai))
+                # input()
+
+    def parse_xml(self, filename):
+        with open(filename, 'r') as xml:
+            self.actions = []
+            for elem, attr in re.findall(r'<(.*?)[ /](.*?)/?>', xml.read()):
+                attr = dict(re.findall(r'\s?(.*?)="(.*?)"', attr))
+                self.actions.append((elem, attr))
+
+            for action_i, (elem, attr) in enumerate(self.actions):
+                self.action_i = action_i
+
+                # 開局
+                if elem == 'INIT':
+                    self.parse_init_tag(attr)
+
+                # ツモ
+                elif re.match(r'[T|U|V|W][0-9]+', elem):
+                    self.parse_tsumo_tag(elem)
+
+                # 打牌
+                elif re.match(r'[D|E|F|G][0-9]+', elem):
+                    self.parse_dahai_tag(elem)
+
+                # 副露
+                elif elem == 'N':
+                    self.parse_huuro_tag(attr)
+
+                # リーチ成立
+                elif elem == 'REACH' and attr['step'] == '2':
+                    who = int(attr['who'])
+                    self.riichi[who] = True
+
+                elif elem == 'DORA':
+                    pai = self.pai(int(attr['hai']))
+                    self.dora[pai] += 1
+
+                # 和了
+                elif elem == 'AGARI':
+                    who = int(attr['who'])
+                    self.who = who
+
 
 if __name__ == '__main__':
-    PaihuParser(mode=PaihuParser.RON_MINKAN_PON_CHII_MODE, max_count=100000, debug=False)
+    mode = questionary.select(
+        'Mode?',
+        choices=[PaihuParser.DAHAI_MODE, PaihuParser.RIICHI_MODE, PaihuParser.ANKAN_MODE,
+                 PaihuParser.KAKAN_MODE, PaihuParser.RON_MINKAN_PON_CHII_MODE]
+    ).ask()
+    max_case = int(questionary.text('Max Case?').ask())
+
+    PaihuParser(mode=mode, max_case=max_case, debug=False)

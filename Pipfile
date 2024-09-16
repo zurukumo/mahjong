@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 numpy = "<2.0.0"
+questionary = "*"
 scikit-learn = "*"
 torch = "*"
 torchvision = "*"
