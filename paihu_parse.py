@@ -14,11 +14,11 @@ class PaihuParser():
     RIICHI_MODE = "riichi"
     ANKAN_MODE = "ankan"
     KAKAN_MODE = "kakan"
-    RON_MINKAN_PON_CHII_MODE = "ron_minkan_pon_chii"
+    RON_DAMINKAN_PON_CHII_MODE = "ron_daiminkan_pon_chii"
 
     SHUNTSU_TYPE = 0
     MINKO_TYPE = 1
-    MINKAN_TYPE = 2
+    DAMINKAN_TYPE = 2
     ANKAN_TYPE = 3
 
     YEARS = [2015, 2016, 2017]
@@ -53,11 +53,11 @@ class PaihuParser():
     def is_kakan(self, m):
         return not self.is_shuntsu(m) and bool(m & 0x0010)
 
-    def is_minkan(self, m):
+    def is_daiminkan(self, m):
         return not (self.is_ankan(m) or self.is_shuntsu(m) or self.is_minko(m) or self.is_kakan(m))
 
     def is_kan(self, m):
-        return self.is_ankan(m) or self.is_kakan(m) or self.is_minkan(m)
+        return self.is_ankan(m) or self.is_kakan(m) or self.is_daiminkan(m)
 
     def sample_riichi(self, who):
         next_elem, _ = self.actions[self.action_i + 1]
@@ -122,7 +122,7 @@ class PaihuParser():
                     if randint(1, 3) == 1:
                         self.output(who, 0)
 
-    def sample_ron_minkan_pon_chii(self):
+    def sample_ron_daiminkan_pon_chii(self):
         next_elem, next_attr = self.actions[self.action_i + 1]
         for who in range(4):
             if who == self.last_teban:
@@ -137,7 +137,7 @@ class PaihuParser():
                         break
                     if int(attr['who']) == who:
                         y = 1
-            elif next_elem == 'N' and int(next_attr['who']) == who and self.is_minkan(int(next_attr['m'])):
+            elif next_elem == 'N' and int(next_attr['who']) == who and self.is_daiminkan(int(next_attr['m'])):
                 y = 2
             elif next_elem == 'N' and int(next_attr['who']) == who and self.is_minko(int(next_attr['m'])):
                 y = 3
@@ -156,8 +156,8 @@ class PaihuParser():
             output_file = 'ankan.csv'
         elif self.mode == PaihuParser.KAKAN_MODE:
             output_file = 'kakan.csv'
-        elif self.mode == PaihuParser.RON_MINKAN_PON_CHII_MODE:
-            output_file = 'ron_minkan_pon_chii.csv'
+        elif self.mode == PaihuParser.RON_DAMINKAN_PON_CHII_MODE:
+            output_file = 'ron_daiminkan_pon_chii.csv'
 
         with open('./datasets/' + output_file, 'a') as f:
             writer = csv.writer(f)
@@ -297,8 +297,8 @@ class PaihuParser():
         self.last_teban = who
 
         # ロン、ミンカン、ポン、チーの抽出
-        if self.mode == PaihuParser.RON_MINKAN_PON_CHII_MODE:
-            self.sample_ron_minkan_pon_chii()
+        if self.mode == PaihuParser.RON_DAMINKAN_PON_CHII_MODE:
+            self.sample_ron_daiminkan_pon_chii()
 
     def parse_huuro_tag(self, attr):
         who = int(attr['who'])
@@ -348,7 +348,7 @@ class PaihuParser():
                 p = ((m & 0xFE00) >> 9) // 3
                 self.huuro[who][p] += 1
                 self.huuro_type[who][PaihuParser.MINKO_TYPE] -= 1
-                self.huuro_type[who][PaihuParser.MINKAN_TYPE] += 1
+                self.huuro_type[who][PaihuParser.DAMINKAN_TYPE] += 1
                 # print(self.url())
                 # print('加槓', self.jp(p))
                 # input()
@@ -359,7 +359,7 @@ class PaihuParser():
                 self.huuro[who][p] += 4
                 self.tehai[who][p] -= 4
                 self.tehai[who][self.last_dahai] += 1
-                self.huuro_type[who][PaihuParser.MINKAN_TYPE] += 1
+                self.huuro_type[who][PaihuParser.DAMINKAN_TYPE] += 1
                 # print(self.url())
                 # print('大明槓', self.jp(p))
                 # print('最後の打牌', self.jp(self.last_dahai))
@@ -410,7 +410,7 @@ if __name__ == '__main__':
     mode = questionary.select(
         'Mode?',
         choices=[PaihuParser.DAHAI_MODE, PaihuParser.RIICHI_MODE, PaihuParser.ANKAN_MODE,
-                 PaihuParser.KAKAN_MODE, PaihuParser.RON_MINKAN_PON_CHII_MODE]
+                 PaihuParser.KAKAN_MODE, PaihuParser.RON_DAMINKAN_PON_CHII_MODE]
     ).ask()
     max_case = int(questionary.text('Max Case?').ask())
 
