@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "8f86f13a543434c3c32a83822f0fe2d223724a86e0c0b67191238fd77a9c06f5"
+            "sha256": "73410865d4602578eb5a4eaaf68fe67efceeabdc9a21683ba5a663c07e89de45"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -18,11 +18,11 @@
     "default": {
         "filelock": {
             "hashes": [
-                "sha256:81de9eb8453c769b63369f87f11131a7ab04e367f8d97ad39dc230daa07e3bec",
-                "sha256:f6ed4c963184f4c84dd5557ce8fece759a3724b37b80c6c4f20a2f63a4dc6609"
+                "sha256:2082e5703d51fbf98ea75855d9d5527e33d8ff23099bec374a134febee6946b0",
+                "sha256:c249fbfcd5db47e5e2d6d62198e565475ee65e4831e2561c8e313fa7eb961435"
             ],
             "markers": "python_version >= '3.8'",
-            "version": "==3.16.0"
+            "version": "==3.16.1"
         },
         "fsspec": {
             "hashes": [
@@ -47,6 +47,15 @@
             ],
             "markers": "python_version >= '3.8'",
             "version": "==1.4.2"
+        },
+        "kago-utils": {
+            "hashes": [
+                "sha256:03145256042129a9de4d9a9229f78b106a78cc01af3600f5645e1cfa1645ef21",
+                "sha256:3b52cb10be56676ac3fb649e601e2a6253f7e4e3d89e91bd0647f7e83f3eb64f"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.12'",
+            "version": "==0.1.1"
         },
         "markupsafe": {
             "hashes": [
@@ -352,11 +361,11 @@
         },
         "sympy": {
             "hashes": [
-                "sha256:401449d84d07be9d0c7a46a64bd54fe097667d5e7181bfe67ec777be9e01cb13",
-                "sha256:c51d75517712f1aed280d4ce58506a4a88d635d6b5dd48b39102a7ae1f3fcfe9"
+                "sha256:54612cf55a62755ee71824ce692986f23c88ffa77207b30c1368eda4a7060f73",
+                "sha256:b27fd2c6530e0ab39e275fc9b683895367e51d5da91baa8d3d64db2565fec4d9"
             ],
             "markers": "python_version >= '3.8'",
-            "version": "==1.13.2"
+            "version": "==1.13.3"
         },
         "threadpoolctl": {
             "hashes": [

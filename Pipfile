@@ -9,6 +9,7 @@ questionary = "*"
 scikit-learn = "*"
 torch = "*"
 torchvision = "*"
+kago-utils = "*"
 
 [dev-packages]
 
