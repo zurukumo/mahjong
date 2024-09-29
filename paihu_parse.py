@@ -67,12 +67,12 @@ class PaihuParser():
             return
 
         # 暗槓以外の副露をしている
-        n_huro = sum(self.huro_type[who])
-        n_ankan = self.huro_type[who][PaihuParser.ANKAN_TYPE]
-        if n_huro != n_ankan:
+        n_huuro = sum(self.huuro_type[who])
+        n_ankan = self.huuro_type[who][PaihuParser.ANKAN_TYPE]
+        if n_huuro != n_ankan:
             return
 
-        if calc_shanten(tehai=self.tehai[who], n_huro=n_ankan) == 0:
+        if calc_shanten(tehai=self.tehai[who], n_huuro=n_ankan) == 0:
             if next_elem == 'REACH':
                 y = 1
             else:
@@ -91,16 +91,16 @@ class PaihuParser():
                 return
 
             tmp_tehai = self.tehai[who][::]
-            n_huro = sum(self.huro_type[who])
+            n_huuro = sum(self.huuro_type[who])
 
             tmp_tehai[self.last_tsumo] = 3
-            shanten1 = calc_shanten(tmp_tehai, n_huro)
-            machi1 = get_yuko(tmp_tehai, [4] * 34, n_huro=n_huro)
+            shanten1 = calc_shanten(tmp_tehai, n_huuro)
+            machi1 = get_yuko(tmp_tehai, [4] * 34, n_huuro=n_huuro)
 
             tmp_tehai[self.last_tsumo] = 0
-            n_huro += 1
-            shanten2 = calc_shanten(tmp_tehai, n_huro)
-            machi2 = get_yuko(tmp_tehai, [4] * 34, n_huro=n_huro)
+            n_huuro += 1
+            shanten2 = calc_shanten(tmp_tehai, n_huuro)
+            machi2 = get_yuko(tmp_tehai, [4] * 34, n_huuro=n_huuro)
 
             if shanten1 != shanten2 or machi1 != machi2:
                 return
@@ -192,7 +192,7 @@ class PaihuParser():
             for i in range(who, who + 4):
                 i = i % 4
                 for j in range(1, 4 + 1):
-                    x += [1 if self.huro[i][k] >= j else 0 for k in range(34)]
+                    x += [1 if self.huuro[i][k] >= j else 0 for k in range(34)]
 
             # ドラ(4)
             for i in range(1, 4 + 1):
@@ -236,8 +236,8 @@ class PaihuParser():
         self.tehai = [[0] * 34 for _ in range(4)]
         self.aka = [[0] * 34 for _ in range(4)]
         self.kawa = [[] for _ in range(4)]
-        self.huro = [[0] * 34 for _ in range(4)]
-        self.huro_type = [[0] * 4 for _ in range(4)]
+        self.huuro = [[0] * 34 for _ in range(4)]
+        self.huuro_type = [[0] * 4 for _ in range(4)]
         self.dora = [0] * 34
         self.riichi = [False] * 4
         self.kyoku = None
@@ -306,9 +306,9 @@ class PaihuParser():
         if self.is_ankan(m):
             # 暗槓
             p = ((m & 0xFF00) >> 8) // 4
-            self.huro[who][p] += 4
+            self.huuro[who][p] += 4
             self.tehai[who][p] -= 4
-            self.huro_type[who][PaihuParser.ANKAN_TYPE] += 1
+            self.huuro_type[who][PaihuParser.ANKAN_TYPE] += 1
             # print(self.url())
             # print('暗槓', self.jp(p))
             # print('最後の打牌', self.jp(self.last_dahai))
@@ -320,10 +320,10 @@ class PaihuParser():
                 p = ((m & 0xFC00) >> 10) // 3
                 p += (p // 7) * 2
                 for i in range(3):
-                    self.huro[who][p + i] += 1
+                    self.huuro[who][p + i] += 1
                     self.tehai[who][p + i] -= 1
                 self.tehai[who][self.last_dahai] += 1
-                self.huro_type[who][PaihuParser.SHUNTSU_TYPE] += 1
+                self.huuro_type[who][PaihuParser.SHUNTSU_TYPE] += 1
                 # print(self.url())
                 # print('順子', self.jp(p))
                 # t = ((m & 0xFC00) >> 10) % 3
@@ -334,10 +334,10 @@ class PaihuParser():
             # 明刻
             elif self.is_minko(m):
                 p = ((m & 0xFE00) >> 9) // 3
-                self.huro[who][p] += 3
+                self.huuro[who][p] += 3
                 self.tehai[who][p] -= 3
                 self.tehai[who][self.last_dahai] += 1
-                self.huro_type[who][PaihuParser.MINKO_TYPE] += 1
+                self.huuro_type[who][PaihuParser.MINKO_TYPE] += 1
                 # print(self.url())
                 # print('明刻', self.jp(p))
                 # print('最後の打牌', self.jp(self.last_dahai))
@@ -346,9 +346,9 @@ class PaihuParser():
             # 加槓
             elif self.is_kakan(m) == 1:
                 p = ((m & 0xFE00) >> 9) // 3
-                self.huro[who][p] += 1
-                self.huro_type[who][PaihuParser.MINKO_TYPE] -= 1
-                self.huro_type[who][PaihuParser.MINKAN_TYPE] += 1
+                self.huuro[who][p] += 1
+                self.huuro_type[who][PaihuParser.MINKO_TYPE] -= 1
+                self.huuro_type[who][PaihuParser.MINKAN_TYPE] += 1
                 # print(self.url())
                 # print('加槓', self.jp(p))
                 # input()
@@ -356,10 +356,10 @@ class PaihuParser():
             # 大明槓
             else:
                 p = ((m & 0xFF00) >> 8) // 4
-                self.huro[who][p] += 4
+                self.huuro[who][p] += 4
                 self.tehai[who][p] -= 4
                 self.tehai[who][self.last_dahai] += 1
-                self.huro_type[who][PaihuParser.MINKAN_TYPE] += 1
+                self.huuro_type[who][PaihuParser.MINKAN_TYPE] += 1
                 # print(self.url())
                 # print('大明槓', self.jp(p))
                 # print('最後の打牌', self.jp(self.last_dahai))
