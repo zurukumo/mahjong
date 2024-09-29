@@ -3,9 +3,9 @@ import os
 import re
 from enum import Enum
 from random import randint
+from typing import Any
 
 import questionary
-from kago_utils.hai import Hai136List
 
 from core.shanten import calc_shanten, get_yuko
 from paihu_debugger import debug
@@ -27,6 +27,37 @@ class PaihuParser():
 
     YEARS = [2015, 2016, 2017]
 
+    count: int
+    mode: Mode
+    max_case: int
+    debug: bool
+
+    filename: str
+    ts: int
+    actions: list[tuple[str, dict[str, str]]]
+    action_i: int
+
+    tehai: list[list[int]]
+    aka: list[list[int]]
+    huuro: list[list[int]]
+    huuro_type: list[list[int]]
+    kawa: list[list[int]]
+    dora: list[int]
+    riichi: list[bool]
+    kyoku: int
+    ten: list[int]
+    last_teban: int | None
+    last_tsumo: int | None
+    last_dahai: int | None
+    who: int
+
+    __slots__ = (
+        'count', 'mode', 'max_case', 'debug',
+        'filename', 'ts', 'actions', 'action_i',
+        'tehai', 'aka', 'huuro', 'huuro_type', 'kawa', 'dora', 'riichi', 'kyoku', 'ten',
+        'last_teban', 'last_tsumo', 'last_dahai', 'who'
+    )
+
     def __init__(self, mode: Mode = Mode.DAHAI, max_case: int = 1500000, debug: bool = False):
         self.count = 0
         self.mode = mode
@@ -35,7 +66,7 @@ class PaihuParser():
 
         self.run()
 
-    def run(self):
+    def run(self) -> None:
         for year in PaihuParser.YEARS:
             file_dir = f'./paihus/xml{year}'
             for filename in os.listdir(file_dir):
@@ -43,7 +74,7 @@ class PaihuParser():
                 self.ts = -1
                 self.parse_xml(f'{file_dir}/{filename}')
 
-    def parse_xml(self, filename):
+    def parse_xml(self, filename: str) -> None:
         with open(filename, 'r') as xml:
             self.actions = []
             for elem, attr in re.findall(r'<(.*?)[ /](.*?)/?>', xml.read()):
@@ -83,31 +114,31 @@ class PaihuParser():
                     who = int(attr['who'])
                     self.who = who
 
-    def url(self):
+    def url(self) -> str:
         return f'https://tenhou.net/0/?log={self.filename.replace('.xml', '')}&ts={self.ts}'
 
-    def pai(self, x):
+    def pai(self, x: int) -> int:
         return x // 4
 
-    def is_ankan(self, m):
+    def is_ankan(self, m: int) -> bool:
         return not bool(m & 0x0003)
 
-    def is_shuntsu(self, m):
+    def is_shuntsu(self, m: int) -> bool:
         return bool(m & 0x0004)
 
-    def is_minko(self, m):
+    def is_minko(self, m: int) -> bool:
         return not self.is_shuntsu(m) and bool(m & 0x0008)
 
-    def is_kakan(self, m):
+    def is_kakan(self, m: int) -> bool:
         return not self.is_shuntsu(m) and bool(m & 0x0010)
 
-    def is_daiminkan(self, m):
+    def is_daiminkan(self, m: int) -> bool:
         return not (self.is_ankan(m) or self.is_shuntsu(m) or self.is_minko(m) or self.is_kakan(m))
 
-    def is_kan(self, m):
+    def is_kan(self, m: int) -> bool:
         return self.is_ankan(m) or self.is_kakan(m) or self.is_daiminkan(m)
 
-    def sample_riichi(self, who):
+    def sample_riichi(self, who: int) -> None:
         next_elem, _ = self.actions[self.action_i + 1]
 
         # リーチ中
@@ -130,15 +161,17 @@ class PaihuParser():
                 y = 0
             self.output(who, y)
 
-    def sample_ankan(self, who):
+    def sample_ankan(self, who: int) -> None:
         next_elem, next_attr = self.actions[self.action_i + 1]
 
         # リーチ中(待ちが変わらない暗槓が可能)
         if self.riichi[who]:
+            if self.last_tsumo is None:
+                return
             if self.tehai[who][self.last_tsumo] != 4:
                 return
 
-            tmp_tehai = self.tehai[who][::]
+            tmp_tehai = self.tehai[who].copy()
             n_huuro = sum(self.huuro_type[who])
 
             tmp_tehai[self.last_tsumo] = 3
@@ -170,7 +203,7 @@ class PaihuParser():
                     if randint(1, 3) == 1:
                         self.output(who, 0)
 
-    def sample_ron_daiminkan_pon_chii(self):
+    def sample_ron_daiminkan_pon_chii(self) -> None:
         next_elem, next_attr = self.actions[self.action_i + 1]
         for who in range(4):
             if who == self.last_teban:
@@ -194,7 +227,7 @@ class PaihuParser():
 
             self.output(who, y)
 
-    def output(self, who, y):
+    def output(self, who: int, y: int) -> None:
         # 出力ファイル名の決定
         if self.mode == Mode.DAHAI:
             output_file = 'dahai.csv'
@@ -232,7 +265,7 @@ class PaihuParser():
             for i in range(who + 1, who + 4):
                 i = i % 4
                 tmp = [0] * 34
-                if i == self.last_teban:
+                if i == self.last_teban and self.last_dahai is not None:
                     tmp[self.last_dahai] = 1
                 x += tmp
 
@@ -279,8 +312,9 @@ class PaihuParser():
             print('終了')
             exit()
 
-    def parse_init_tag(self, attr):
+    def parse_init_tag(self, attr: dict[str, Any]) -> None:
         self.ts += 1
+
         self.tehai = [[0] * 34 for _ in range(4)]
         self.aka = [[0] * 34 for _ in range(4)]
         self.kawa = [[] for _ in range(4)]
@@ -288,8 +322,8 @@ class PaihuParser():
         self.huuro_type = [[0] * 4 for _ in range(4)]
         self.dora = [0] * 34
         self.riichi = [False] * 4
-        self.kyoku = None
-        self.ten = [[0] * 34 for _ in range(4)]
+        self.kyoku = 0
+        self.ten = [0] * 4
 
         # 配牌をパース
         for who in range(4):
@@ -305,12 +339,12 @@ class PaihuParser():
 
         # 点棒状況をパース
         for who, ten in enumerate(map(int, attr['ten'].split(','))):
-            self.ten[who][min(33, ten // 20)] = 4
+            self.ten[who] = ten
 
         self.last_dahai = -1
         self.last_tsumo = -1
 
-    def parse_tsumo_tag(self, elem):
+    def parse_tsumo_tag(self, elem: str) -> None:
         idx = {'T': 0, 'U': 1, 'V': 2, 'W': 3}
         who = idx[elem[0]]
         pai = self.pai(int(elem[1:]))
@@ -328,7 +362,7 @@ class PaihuParser():
         if self.mode == Mode.ANKAN:
             self.sample_ankan(who)
 
-    def parse_dahai_tag(self, elem):
+    def parse_dahai_tag(self, elem: str) -> None:
         idx = {'D': 0, 'E': 1, 'F': 2, 'G': 3}
         who = idx[elem[0]]
         pai = self.pai(int(elem[1:]))
@@ -348,7 +382,7 @@ class PaihuParser():
         if self.mode == Mode.RON_DAMINKAN_PON_CHII:
             self.sample_ron_daiminkan_pon_chii()
 
-    def parse_huuro_tag(self, attr):
+    def parse_huuro_tag(self, attr: dict[str, Any]) -> None:
         who = int(attr['who'])
         m = int(attr['m'])
         if self.is_ankan(m):
@@ -364,7 +398,7 @@ class PaihuParser():
 
         else:
             # 順子
-            if self.is_shuntsu(m):
+            if self.is_shuntsu(m) and self.last_dahai is not None:
                 p = ((m & 0xFC00) >> 10) // 3
                 p += (p // 7) * 2
                 for i in range(3):
@@ -380,7 +414,7 @@ class PaihuParser():
                 # input()
 
             # 明刻
-            elif self.is_minko(m):
+            elif self.is_minko(m) and self.last_dahai is not None:
                 p = ((m & 0xFE00) >> 9) // 3
                 self.huuro[who][p] += 3
                 self.tehai[who][p] -= 3
@@ -402,7 +436,7 @@ class PaihuParser():
                 # input()
 
             # 大明槓
-            else:
+            elif self.last_dahai is not None:
                 p = ((m & 0xFF00) >> 8) // 4
                 self.huuro[who][p] += 4
                 self.tehai[who][p] -= 4
