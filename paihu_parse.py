@@ -28,6 +28,10 @@ class PaihuParser():
         self.mode = mode
         self.max_case = max_case
         self.debug = debug
+
+        self.run()
+
+    def run(self):
         for year in PaihuParser.YEARS:
             file_dir = f'./paihus/xml{year}'
             for filename in os.listdir(file_dir):
