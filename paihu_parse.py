@@ -1,21 +1,25 @@
 import csv
 import os
 import re
+from enum import Enum
 from random import randint
 
 import questionary
+from kago_utils.hai import Hai136List
 
 from core.shanten import calc_shanten, get_yuko
 from paihu_debugger import debug
 
 
-class PaihuParser():
-    DAHAI_MODE = "dahai"
-    RIICHI_MODE = "riichi"
-    ANKAN_MODE = "ankan"
-    KAKAN_MODE = "kakan"
-    RON_DAMINKAN_PON_CHII_MODE = "ron_daiminkan_pon_chii"
+class Mode(Enum):
+    DAHAI = 'dahai'
+    RIICHI = 'riichi'
+    ANKAN = 'ankan'
+    KAKAN = 'kakan'
+    RON_DAMINKAN_PON_CHII = 'ron_daiminkan_pon_chii'
 
+
+class PaihuParser():
     SHUNTSU_TYPE = 0
     MINKO_TYPE = 1
     DAMINKAN_TYPE = 2
@@ -23,7 +27,7 @@ class PaihuParser():
 
     YEARS = [2015, 2016, 2017]
 
-    def __init__(self, mode=DAHAI_MODE, max_case=1500000, debug=False):
+    def __init__(self, mode: Mode = Mode.DAHAI, max_case: int = 1500000, debug: bool = False):
         self.count = 0
         self.mode = mode
         self.max_case = max_case
@@ -38,6 +42,46 @@ class PaihuParser():
                 self.filename = filename
                 self.ts = -1
                 self.parse_xml(f'{file_dir}/{filename}')
+
+    def parse_xml(self, filename):
+        with open(filename, 'r') as xml:
+            self.actions = []
+            for elem, attr in re.findall(r'<(.*?)[ /](.*?)/?>', xml.read()):
+                attr = dict(re.findall(r'\s?(.*?)="(.*?)"', attr))
+                self.actions.append((elem, attr))
+
+            for action_i, (elem, attr) in enumerate(self.actions):
+                self.action_i = action_i
+
+                # 開局
+                if elem == 'INIT':
+                    self.parse_init_tag(attr)
+
+                # ツモ
+                elif re.match(r'[T|U|V|W][0-9]+', elem):
+                    self.parse_tsumo_tag(elem)
+
+                # 打牌
+                elif re.match(r'[D|E|F|G][0-9]+', elem):
+                    self.parse_dahai_tag(elem)
+
+                # 副露
+                elif elem == 'N':
+                    self.parse_huuro_tag(attr)
+
+                # リーチ成立
+                elif elem == 'REACH' and attr['step'] == '2':
+                    who = int(attr['who'])
+                    self.riichi[who] = True
+
+                elif elem == 'DORA':
+                    pai = self.pai(int(attr['hai']))
+                    self.dora[pai] += 1
+
+                # 和了
+                elif elem == 'AGARI':
+                    who = int(attr['who'])
+                    self.who = who
 
     def url(self):
         return f'https://tenhou.net/0/?log={self.filename.replace('.xml', '')}&ts={self.ts}'
@@ -152,15 +196,15 @@ class PaihuParser():
 
     def output(self, who, y):
         # 出力ファイル名の決定
-        if self.mode == PaihuParser.DAHAI_MODE:
+        if self.mode == Mode.DAHAI:
             output_file = 'dahai.csv'
-        elif self.mode == PaihuParser.RIICHI_MODE:
+        elif self.mode == Mode.RIICHI:
             output_file = 'riichi.csv'
-        elif self.mode == PaihuParser.ANKAN_MODE:
+        elif self.mode == Mode.ANKAN:
             output_file = 'ankan.csv'
-        elif self.mode == PaihuParser.KAKAN_MODE:
+        elif self.mode == Mode.KAKAN:
             output_file = 'kakan.csv'
-        elif self.mode == PaihuParser.RON_DAMINKAN_PON_CHII_MODE:
+        elif self.mode == Mode.RON_DAMINKAN_PON_CHII:
             output_file = 'ron_daiminkan_pon_chii.csv'
 
         with open('./datasets/' + output_file, 'a') as f:
@@ -277,11 +321,11 @@ class PaihuParser():
         self.last_tsumo = pai
 
         # リーチの抽出
-        if self.mode == PaihuParser.RIICHI_MODE:
+        if self.mode == Mode.RIICHI:
             self.sample_riichi(who)
 
         # 暗槓の抽出
-        if self.mode == PaihuParser.ANKAN_MODE:
+        if self.mode == Mode.ANKAN:
             self.sample_ankan(who)
 
     def parse_dahai_tag(self, elem):
@@ -290,7 +334,7 @@ class PaihuParser():
         pai = self.pai(int(elem[1:]))
 
         # 打牌の抽出
-        if self.mode == PaihuParser.DAHAI_MODE and self.riichi[who]:
+        if self.mode == Mode.DAHAI and self.riichi[who]:
             if randint(1, 30) == 1:
                 self.output(who, pai)
 
@@ -301,7 +345,7 @@ class PaihuParser():
         self.last_teban = who
 
         # ロン、ミンカン、ポン、チーの抽出
-        if self.mode == PaihuParser.RON_DAMINKAN_PON_CHII_MODE:
+        if self.mode == Mode.RON_DAMINKAN_PON_CHII:
             self.sample_ron_daiminkan_pon_chii()
 
     def parse_huuro_tag(self, attr):
@@ -369,53 +413,9 @@ class PaihuParser():
                 # print('最後の打牌', self.jp(self.last_dahai))
                 # input()
 
-    def parse_xml(self, filename):
-        with open(filename, 'r') as xml:
-            self.actions = []
-            for elem, attr in re.findall(r'<(.*?)[ /](.*?)/?>', xml.read()):
-                attr = dict(re.findall(r'\s?(.*?)="(.*?)"', attr))
-                self.actions.append((elem, attr))
-
-            for action_i, (elem, attr) in enumerate(self.actions):
-                self.action_i = action_i
-
-                # 開局
-                if elem == 'INIT':
-                    self.parse_init_tag(attr)
-
-                # ツモ
-                elif re.match(r'[T|U|V|W][0-9]+', elem):
-                    self.parse_tsumo_tag(elem)
-
-                # 打牌
-                elif re.match(r'[D|E|F|G][0-9]+', elem):
-                    self.parse_dahai_tag(elem)
-
-                # 副露
-                elif elem == 'N':
-                    self.parse_huuro_tag(attr)
-
-                # リーチ成立
-                elif elem == 'REACH' and attr['step'] == '2':
-                    who = int(attr['who'])
-                    self.riichi[who] = True
-
-                elif elem == 'DORA':
-                    pai = self.pai(int(attr['hai']))
-                    self.dora[pai] += 1
-
-                # 和了
-                elif elem == 'AGARI':
-                    who = int(attr['who'])
-                    self.who = who
-
 
 if __name__ == '__main__':
-    mode = questionary.select(
-        'Mode?',
-        choices=[PaihuParser.DAHAI_MODE, PaihuParser.RIICHI_MODE, PaihuParser.ANKAN_MODE,
-                 PaihuParser.KAKAN_MODE, PaihuParser.RON_DAMINKAN_PON_CHII_MODE]
-    ).ask()
     max_case = int(questionary.text('Max Case?').ask())
+    mode = questionary.select('Mode?', choices=[mode.value for mode in Mode]).ask()
 
-    PaihuParser(mode=mode, max_case=max_case, debug=False)
+    PaihuParser(mode=Mode(mode), max_case=max_case, debug=False)
