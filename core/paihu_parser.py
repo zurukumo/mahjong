@@ -59,7 +59,12 @@ class PaihuParser():
         self.max_case = max_case
         self.debug = debug
 
+        self.remove_file_if_exists()
         self.run()
+
+    def remove_file_if_exists(self) -> None:
+        if os.path.exists(f'./datasets/{self.output_filename}'):
+            os.remove(f'./datasets/{self.output_filename}')
 
     def run(self) -> None:
         for year in PaihuParser.YEARS:
@@ -76,38 +81,38 @@ class PaihuParser():
                 attr = dict(re.findall(r'\s?(.*?)="(.*?)"', attr))
                 self.actions.append((elem, attr))
 
-            for action_i, (elem, attr) in enumerate(self.actions):
-                self.action_i = action_i
+        for action_i, (elem, attr) in enumerate(self.actions):
+            self.action_i = action_i
 
-                # 開局
-                if elem == 'INIT':
-                    self.parse_init_tag(attr)
+            # 開局
+            if elem == 'INIT':
+                self.parse_init_tag(attr)
 
-                # ツモ
-                elif re.match(r'[T|U|V|W][0-9]+', elem):
-                    self.parse_tsumo_tag(elem)
+            # ツモ
+            elif re.match(r'[T|U|V|W][0-9]+', elem):
+                self.parse_tsumo_tag(elem)
 
-                # 打牌
-                elif re.match(r'[D|E|F|G][0-9]+', elem):
-                    self.parse_dahai_tag(elem)
+            # 打牌
+            elif re.match(r'[D|E|F|G][0-9]+', elem):
+                self.parse_dahai_tag(elem)
 
-                # 副露
-                elif elem == 'N':
-                    self.parse_huuro_tag(attr)
+            # 副露
+            elif elem == 'N':
+                self.parse_huuro_tag(attr)
 
-                # リーチ成立
-                elif elem == 'REACH' and attr['step'] == '2':
-                    who = int(attr['who'])
-                    self.riichi[who] = True
+            # リーチ成立
+            elif elem == 'REACH' and attr['step'] == '2':
+                who = int(attr['who'])
+                self.riichi[who] = True
 
-                elif elem == 'DORA':
-                    pai = self.pai(int(attr['hai']))
-                    self.dora[pai] += 1
+            # ドラ
+            elif elem == 'DORA':
+                self.dora += Hai136(int(attr['hai']))
 
-                # 和了
-                elif elem == 'AGARI':
-                    who = int(attr['who'])
-                    self.who = who
+            # 和了
+            elif elem == 'AGARI':
+                who = int(attr['who'])
+                self.who = who
 
     def url(self) -> str:
         return f'https://tenhou.net/0/?log={self.filename.replace('.xml', '')}&ts={self.ts}'
@@ -311,19 +316,23 @@ class PaihuParser():
                 planes += [0] * 34
         return planes
 
-    def output(self, who: int, y: int) -> None:
-        # 出力ファイル名の決定
-        if self.mode == Mode.DAHAI:
-            output_file = 'dahai.csv'
-        elif self.mode == Mode.RIICHI:
-            output_file = 'riichi.csv'
-        elif self.mode == Mode.ANKAN:
-            output_file = 'ankan.csv'
-        elif self.mode == Mode.KAKAN:
-            output_file = 'kakan.csv'
-        elif self.mode == Mode.RON_DAMINKAN_PON_CHII:
-            output_file = 'ron_daiminkan_pon_chii.csv'
+    @property
+    def output_filename(self) -> str:
+        match self.mode:
+            case Mode.DAHAI:
+                return 'dahai.csv'
+            case Mode.RIICHI:
+                return 'riichi.csv'
+            case Mode.ANKAN:
+                return 'ankan.csv'
+            case Mode.KAKAN:
+                return 'kakan.csv'
+            case Mode.RON_DAMINKAN_PON_CHII:
+                return 'ron_daiminkan_pon_chii.csv'
 
+        raise ValueError('Invalid Mode')
+
+    def output(self, who: int, y: int) -> None:
         x = []
 
         x += self.jun_tehai_to_plane(who)
@@ -337,7 +346,7 @@ class PaihuParser():
         x += self.kyoku_to_plane()
         x += self.position_to_plane(who)
 
-        with open('./datasets/' + output_file, 'a') as f:
+        with open('./datasets/' + self.output_filename, 'a') as f:
             writer = csv.writer(f)
 
             # 座順(4)
