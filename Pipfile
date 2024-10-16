@@ -17,6 +17,5 @@ kago-utils = {file = "../kago-utils", editable = true}
 python_version = "3.12"
 
 [scripts]
-parse = "python3 paihu_parse.py"
+parse-paihu = "python -m scripts.parse_paihu"
 train = "python3 paihu_train.py"
-diff = "python3 diff.py"

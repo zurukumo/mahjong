@@ -4,7 +4,6 @@ import re
 from enum import Enum
 from typing import Any
 
-import questionary
 from kago_utils.hai import Hai136
 from kago_utils.hai_group import Hai34Group, Hai136Group
 from kago_utils.huuro import Ankan, Chii, Daiminkan, Kakan, Pon
@@ -456,10 +455,3 @@ class PaihuParser():
             case Ankan():
                 self.tehai[who] -= huuro.hais
                 self.huuro[who].append(huuro)
-
-
-if __name__ == '__main__':
-    mode = questionary.select('Mode?', choices=[mode.value for mode in Mode]).ask()
-    max_case = int(questionary.text('Max Case?', default='150000').ask())
-
-    PaihuParser(mode=Mode(mode), max_case=max_case, debug=False)
