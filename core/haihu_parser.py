@@ -4,13 +4,13 @@ import re
 from enum import Enum
 from typing import Any
 
+from haihu_debugger import debug
 from kago_utils.hai import Hai136
 from kago_utils.hai_group import Hai34Group, Hai136Group
 from kago_utils.huuro import Ankan, Chii, Daiminkan, Kakan, Pon
 from kago_utils.shanten import Shanten
 
 from core.huuro_parser import HuuroParser
-from paihu_debugger import debug
 
 
 class Mode(Enum):
@@ -21,7 +21,7 @@ class Mode(Enum):
     RON_DAMINKAN_PON_CHII = 'ron_daiminkan_pon_chii'
 
 
-class PaihuParser():
+class HaihuParser():
     YEARS = [2015, 2016, 2017]
 
     count: int
@@ -67,8 +67,8 @@ class PaihuParser():
             os.remove(f'./datasets/{self.output_filename}')
 
     def run(self) -> None:
-        for year in PaihuParser.YEARS:
-            file_dir = f'./paihus/xml{year}'
+        for year in HaihuParser.YEARS:
+            file_dir = f'./haihus/xml{year}'
             for filename in os.listdir(file_dir):
                 self.filename = filename
                 self.ts = -1
