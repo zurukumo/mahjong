@@ -9,7 +9,7 @@ questionary = "*"
 scikit-learn = "*"
 torch = "*"
 torchvision = "*"
-kago-utils = "*"
+kago-utils = {file = "../kago-utils", editable = true}
 
 [dev-packages]
 
@@ -19,3 +19,4 @@ python_version = "3.12"
 [scripts]
 parse = "python3 paihu_parse.py"
 train = "python3 paihu_train.py"
+diff = "python3 diff.py"

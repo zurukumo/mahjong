@@ -14,7 +14,7 @@ def jps(x):
     return ''.join([jp(pai) for pai in sorted(tmp)])
 
 
-def debug(x, y):
+def debug(x: list[int], y: int) -> None:
     print("実際に切った牌:", jp(y))
 
     print("手牌:", jps(x[0 * 34:4 * 34]))

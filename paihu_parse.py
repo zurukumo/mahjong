@@ -2,12 +2,15 @@ import csv
 import os
 import re
 from enum import Enum
-from random import randint
 from typing import Any
 
 import questionary
+from kago_utils.hai import Hai136
+from kago_utils.hai_group import Hai34Group, Hai136Group
+from kago_utils.huuro import Ankan, Chii, Daiminkan, Kakan, Pon
+from kago_utils.shanten import Shanten
 
-from core.shanten import calc_shanten, get_yuko
+from core.huuro_parser import HuuroParser
 from paihu_debugger import debug
 
 
@@ -20,11 +23,6 @@ class Mode(Enum):
 
 
 class PaihuParser():
-    SHUNTSU_TYPE = 0
-    MINKO_TYPE = 1
-    DAMINKAN_TYPE = 2
-    ANKAN_TYPE = 3
-
     YEARS = [2015, 2016, 2017]
 
     count: int
@@ -37,28 +35,26 @@ class PaihuParser():
     actions: list[tuple[str, dict[str, str]]]
     action_i: int
 
-    tehai: list[list[int]]
-    aka: list[list[int]]
-    huuro: list[list[int]]
-    huuro_type: list[list[int]]
-    kawa: list[list[int]]
-    dora: list[int]
+    tehai: list[Hai136Group]
+    huuro: list[list[Chii | Pon | Kakan | Daiminkan | Daiminkan]]
+    kawa: list[list[Hai136]]
+    dora: list[Hai136]
     riichi: list[bool]
     kyoku: int
     ten: list[int]
     last_teban: int | None
-    last_tsumo: int | None
-    last_dahai: int | None
+    last_tsumo: Hai136 | None
+    last_dahai: Hai136 | None
     who: int
 
     __slots__ = (
         'count', 'mode', 'max_case', 'debug',
         'filename', 'ts', 'actions', 'action_i',
-        'tehai', 'aka', 'huuro', 'huuro_type', 'kawa', 'dora', 'riichi', 'kyoku', 'ten',
+        'tehai', 'huuro', 'kawa', 'dora', 'riichi', 'kyoku', 'ten',
         'last_teban', 'last_tsumo', 'last_dahai', 'who'
     )
 
-    def __init__(self, mode: Mode = Mode.DAHAI, max_case: int = 1500000, debug: bool = False):
+    def __init__(self, mode: Mode, max_case: int, debug: bool = False) -> None:
         self.count = 0
         self.mode = mode
         self.max_case = max_case
@@ -120,24 +116,6 @@ class PaihuParser():
     def pai(self, x: int) -> int:
         return x // 4
 
-    def is_ankan(self, m: int) -> bool:
-        return not bool(m & 0x0003)
-
-    def is_shuntsu(self, m: int) -> bool:
-        return bool(m & 0x0004)
-
-    def is_minko(self, m: int) -> bool:
-        return not self.is_shuntsu(m) and bool(m & 0x0008)
-
-    def is_kakan(self, m: int) -> bool:
-        return not self.is_shuntsu(m) and bool(m & 0x0010)
-
-    def is_daiminkan(self, m: int) -> bool:
-        return not (self.is_ankan(m) or self.is_shuntsu(m) or self.is_minko(m) or self.is_kakan(m))
-
-    def is_kan(self, m: int) -> bool:
-        return self.is_ankan(m) or self.is_kakan(m) or self.is_daiminkan(m)
-
     def sample_riichi(self, who: int) -> None:
         next_elem, _ = self.actions[self.action_i + 1]
 
@@ -145,63 +123,57 @@ class PaihuParser():
         if self.riichi[who]:
             return
 
-        # 暗槓以外の副露をしている
-        n_huuro = sum(self.huuro_type[who])
-        n_ankan = self.huuro_type[who][PaihuParser.ANKAN_TYPE]
-        if n_huuro != n_ankan:
+        # 鳴いている
+        has_naki = any([isinstance(huuro, (Chii, Pon, Kakan, Daiminkan)) for huuro in self.huuro[who]])
+        if has_naki:
             return
 
-        if calc_shanten(tehai=self.tehai[who], n_huuro=n_ankan) == 0:
+        if Shanten(self.tehai[who]).shanten == 0:
             if next_elem == 'REACH':
                 y = 1
             else:
-                # ダマテンは継続しがちなので適宜飛ばす
-                if randint(1, 3) <= 2:
-                    return
                 y = 0
             self.output(who, y)
 
     def sample_ankan(self, who: int) -> None:
         next_elem, next_attr = self.actions[self.action_i + 1]
 
-        # リーチ中(待ちが変わらない暗槓が可能)
+        # リーチ中(向聴数と待ちが変わらない暗槓が可能)
         if self.riichi[who]:
             if self.last_tsumo is None:
                 return
-            if self.tehai[who][self.last_tsumo] != 4:
+            if self.tehai[who].to_hai34_group().to_counter()[self.last_tsumo.to_hai34()] != 4:
                 return
 
-            tmp_tehai = self.tehai[who].copy()
-            n_huuro = sum(self.huuro_type[who])
+            # ツモ前
+            shanten1 = Shanten(self.tehai[who] - Hai136Group([self.last_tsumo]))
+            # 暗槓後
+            shanten2 = Shanten(self.tehai[who] - Hai34Group([self.last_tsumo] * 4))
 
-            tmp_tehai[self.last_tsumo] = 3
-            shanten1 = calc_shanten(tmp_tehai, n_huuro)
-            machi1 = get_yuko(tmp_tehai, [4] * 34, n_huuro=n_huuro)
-
-            tmp_tehai[self.last_tsumo] = 0
-            n_huuro += 1
-            shanten2 = calc_shanten(tmp_tehai, n_huuro)
-            machi2 = get_yuko(tmp_tehai, [4] * 34, n_huuro=n_huuro)
-
-            if shanten1 != shanten2 or machi1 != machi2:
+            if not (shanten1.shanten == shanten2.shanten == 0):
+                return
+            if shanten1.yuukouhai != shanten2.yuukouhai:
                 return
 
-            if next_elem == 'N' and self.is_ankan(int(next_attr['m'])):
-                self.output(who, 1)
+            if next_elem == 'N':
+                huuro = HuuroParser.from_haihu(int(next_attr['m']))
+                if isinstance(huuro, Ankan):
+                    self.output(who, 1)
             else:
                 self.output(who, 0)
 
         # 非リーチ中
         else:
             for i in range(34):
-                if self.tehai[who][i] != 4:
+                if self.tehai[who].to_hai34_group().to_counter()[i] != 4:
                     continue
 
-                if next_elem == 'N' and self.is_ankan(int(next_attr['m'])):
-                    self.output(who, 1)
+                if next_elem == 'N':
+                    huuro = HuuroParser.from_haihu(int(next_attr['m']))
+                    if isinstance(huuro, Ankan):
+                        self.output(who, 1)
                 else:
-                    if randint(1, 3) == 1:
-                        self.output(who, 0)
+                    self.output(who, 0)
 
     def sample_ron_daiminkan_pon_chii(self) -> None:
         next_elem, next_attr = self.actions[self.action_i + 1]
@@ -218,14 +190,127 @@ class PaihuParser():
                         break
                     if int(attr['who']) == who:
                         y = 1
-            elif next_elem == 'N' and int(next_attr['who']) == who and self.is_daiminkan(int(next_attr['m'])):
-                y = 2
-            elif next_elem == 'N' and int(next_attr['who']) == who and self.is_minko(int(next_attr['m'])):
-                y = 3
-            elif next_elem == 'N' and int(next_attr['who']) == who and self.is_shuntsu(int(next_attr['m'])):
-                y = 4 + ((int(next_attr['m']) & 0xFC00) >> 10) % 3
+            elif next_elem == 'N' and int(next_attr['who']) == who:
+                huuro = HuuroParser.from_haihu(int(next_attr['m']))
+                if isinstance(huuro, Daiminkan):
+                    y = 2
+                elif isinstance(huuro, Pon):
+                    y = 3
+                elif isinstance(huuro, Chii):
+                    if huuro.stolen == huuro.hais[0]:
+                        y = 4
+                    elif huuro.stolen == huuro.hais[1]:
+                        y = 5
+                    elif huuro.stolen == huuro.hais[2]:
+                        y = 6
 
             self.output(who, y)
+
+    def to_plane(self, counter: list[int], depth: int) -> list[int]:
+        plane = [0] * (34 * depth)
+        for i in range(34):
+            for j in range(depth):
+                if counter[i] > j:
+                    plane[j * 34 + i] = 1
+        return plane
+
+    def jun_tehai_to_plane(self, who: int) -> list[int]:
+        # 自家の手牌(4planes * 4players)
+        planes: list[int] = []
+        for i in range(4):
+            if i == who:
+                counter = self.tehai[i].to_hai34_group().to_counter()
+                planes += self.to_plane(counter, 4)
+            else:
+                planes += [0] * 34 * 4
+        return planes
+
+    def jun_tehai_aka_to_plane(self, who: int) -> list[int]:
+        # 自家の赤牌(1plane * 4players)
+        planes: list[int] = []
+        for i in range(4):
+            if i == who:
+                counter = [0] * 34
+                for hai in self.tehai[who].hais:
+                    if hai.is_aka():
+                        counter[hai.to_hai34().id] += 1
+                planes += counter
+            else:
+                planes += [0] * 34
+        return planes
+
+    def kawa_to_plane(self) -> list[int]:
+        # 全員の河(20planes * 4players)
+        planes: list[int] = []
+        for i in range(4):
+            for j in range(20):
+                if j < len(self.kawa[i]):
+                    planes += Hai34Group([self.kawa[i][j].to_hai34()]).to_counter()
+                else:
+                    planes += [0] * 34
+        return planes
+
+    def huuro_to_plane(self) -> list[int]:
+        # 全員の副露(4planes * 4players)
+        planes: list[int] = []
+        for i in range(4):
+            tmp = Hai136Group([])
+            for huuro in self.huuro[i]:
+                tmp += huuro.hais
+            counter = tmp.to_hai34_group().to_counter()
+            planes += self.to_plane(counter, 4)
+        return planes
+
+    def last_dahai_to_plane(self) -> list[int]:
+        # 他家の最終打牌(1plane * 4players)
+        planes: list[int] = []
+        for i in range(4):
+            if self.last_dahai is not None and self.last_teban is not None and i == self.last_teban:
+                planes += Hai34Group([self.last_dahai.to_hai34()]).to_counter()
+            else:
+                planes += [0] * 34
+        return planes
+
+    def riichi_to_plane(self) -> list[int]:
+        # リーチ(4planes)
+        planes: list[int] = []
+        for i in range(4):
+            planes += [1] * 34 if self.riichi[i] else [0] * 34
+        return planes
+
+    def dora_to_plane(self) -> list[int]:
+        # ドラ(4planes)
+        return self.to_plane(self.dora, 4)
+
+    def bakaze_to_plane(self) -> list[int]:
+        # 場風(4planes)
+        planes: list[int] = []
+        for i in range(4):
+            if i == self.kyoku // 4:
+                planes += [1] * 34
+            else:
+                planes += [0] * 34
+        return planes
+
+    def kyoku_to_plane(self) -> list[int]:
+        # 局数(4planes)
+        planes: list[int] = []
+        for i in range(4):
+            if i == self.kyoku % 4:
+                planes += [1] * 34
+            else:
+                planes += [0] * 34
+        return planes
+
+    def position_to_plane(self, who: int) -> list[int]:
+        # 場所(4planes)
+        planes: list[int] = []
+        for i in range(4):
+            if i == who:
+                planes += [1] * 34
+            else:
+                planes += [0] * 34
+        return planes
 
     def output(self, who: int, y: int) -> None:
         # 出力ファイル名の決定
@@ -240,56 +325,21 @@ class PaihuParser():
         elif self.mode == Mode.RON_DAMINKAN_PON_CHII:
             output_file = 'ron_daiminkan_pon_chii.csv'
 
+        x = []
+
+        x += self.jun_tehai_to_plane(who)
+        x += self.jun_tehai_aka_to_plane(who)
+        x += self.huuro_to_plane()
+        x += self.kawa_to_plane()
+        x += self.last_dahai_to_plane()
+        x += self.riichi_to_plane()
+        x += self.dora_to_plane()
+        x += self.bakaze_to_plane()
+        x += self.kyoku_to_plane()
+        x += self.position_to_plane(who)
+
         with open('./datasets/' + output_file, 'a') as f:
             writer = csv.writer(f)
-
-            x = []
-
-            # 手牌(4)
-            for i in range(1, 4 + 1):
-                x += [1 if self.tehai[who][j] >= i else 0 for j in range(34)]
-
-            # 赤(1)
-            x += self.aka[who]
-
-            # 河(20 * 4)
-            for i in range(who, who + 4):
-                i = i % 4
-                for j in range(20):
-                    tmp = [0] * 34
-                    if j < len(self.kawa[i]):
-                        tmp[self.kawa[i][j]] = 1
-                    x += tmp
-
-            # 最終打牌(3)
-            for i in range(who + 1, who + 4):
-                i = i % 4
-                tmp = [0] * 34
-                if i == self.last_teban and self.last_dahai is not None:
-                    tmp[self.last_dahai] = 1
-                x += tmp
-
-            # 副露(4 * 4)
-            for i in range(who, who + 4):
-                i = i % 4
-                for j in range(1, 4 + 1):
-                    x += [1 if self.huuro[i][k] >= j else 0 for k in range(34)]
-
-            # ドラ(4)
-            for i in range(1, 4 + 1):
-                x += [1 if self.dora[j] >= i else 0 for j in range(34)]
-
-            # リーチ(4)
-            for i in range(who, who + 4):
-                i = i % 4
-                x += [1] * 34 if self.riichi[i] else [0] * 34
-
-            # 局数(12)
-            for i in range(12):
-                if i == min(self.kyoku, 11):
-                    x += [1] * 34
-                else:
-                    x += [0] * 34
 
             # 座順(4)
             for i in range(4):
@@ -307,6 +357,7 @@ class PaihuParser():
                 input()
 
         self.count += 1
+
         print(self.count, '/', self.max_case)
         if self.count == self.max_case:
             print('終了')
@@ -315,11 +366,9 @@ class PaihuParser():
     def parse_init_tag(self, attr: dict[str, Any]) -> None:
         self.ts += 1
 
-        self.tehai = [[0] * 34 for _ in range(4)]
-        self.aka = [[0] * 34 for _ in range(4)]
+        self.tehai = [Hai136Group([]) for _ in range(4)]
         self.kawa = [[] for _ in range(4)]
-        self.huuro = [[0] * 34 for _ in range(4)]
-        self.huuro_type = [[0] * 4 for _ in range(4)]
+        self.huuro = [[] for _ in range(4)]
         self.dora = [0] * 34
         self.riichi = [False] * 4
         self.kyoku = 0
@@ -327,10 +376,8 @@ class PaihuParser():
 
         # 配牌をパース
         for who in range(4):
-            for pai in map(int, attr[f'hai{who}'].split(',')):
-                self.tehai[who][self.pai(pai)] += 1
-                if pai in [16, 52, 88]:
-                    self.aka[who][self.pai(pai)] = 4
+            for hai in map(int, attr[f'hai{who}'].split(',')):
+                self.tehai[who] += Hai136(hai)
 
         # 局数、本場、供託、ドラをパース
         kyoku, honba, kyotaku, _, _, dora = map(int, attr['seed'].split(','))
@@ -341,18 +388,17 @@ class PaihuParser():
         for who, ten in enumerate(map(int, attr['ten'].split(','))):
             self.ten[who] = ten
 
-        self.last_dahai = -1
-        self.last_tsumo = -1
+        self.last_teban = None
+        self.last_dahai = None
+        self.last_tsumo = None
 
     def parse_tsumo_tag(self, elem: str) -> None:
         idx = {'T': 0, 'U': 1, 'V': 2, 'W': 3}
         who = idx[elem[0]]
-        pai = self.pai(int(elem[1:]))
+        hai = Hai136(int(elem[1:]))
 
-        self.tehai[who][pai] += 1
-        if pai in [16, 52, 88]:
-            self.aka[who][pai] = 4
-        self.last_tsumo = pai
+        self.tehai[who] += hai
+        self.last_tsumo = hai
 
         # リーチの抽出
         if self.mode == Mode.RIICHI:
@@ -365,17 +411,16 @@ class PaihuParser():
     def parse_dahai_tag(self, elem: str) -> None:
         idx = {'D': 0, 'E': 1, 'F': 2, 'G': 3}
         who = idx[elem[0]]
-        pai = self.pai(int(elem[1:]))
+        hai = Hai136(int(elem[1:]))
 
         # 打牌の抽出
-        if self.mode == Mode.DAHAI and self.riichi[who]:
-            if randint(1, 30) == 1:
-                self.output(who, pai)
+        if self.mode == Mode.DAHAI and not self.riichi[who]:
+            self.output(who, hai.to_hai34().id)
 
         # 打牌の処理
-        self.kawa[who].append(pai)
-        self.tehai[who][pai] -= 1
-        self.last_dahai = pai
+        self.kawa[who].append(hai)
+        self.tehai[who] -= hai
+        self.last_dahai = hai
         self.last_teban = who
 
         # ロン、ミンカン、ポン、チーの抽出
@@ -385,67 +430,32 @@ class PaihuParser():
     def parse_huuro_tag(self, attr: dict[str, Any]) -> None:
         who = int(attr['who'])
         m = int(attr['m'])
-        if self.is_ankan(m):
-            # 暗槓
-            p = ((m & 0xFF00) >> 8) // 4
-            self.huuro[who][p] += 4
-            self.tehai[who][p] -= 4
-            self.huuro_type[who][PaihuParser.ANKAN_TYPE] += 1
-            # print(self.url())
-            # print('暗槓', self.jp(p))
-            # print('最後の打牌', self.jp(self.last_dahai))
-            # input()
+        huuro = HuuroParser.from_haihu(m)
 
-        else:
-            # 順子
-            if self.is_shuntsu(m) and self.last_dahai is not None:
-                p = ((m & 0xFC00) >> 10) // 3
-                p += (p // 7) * 2
-                for i in range(3):
-                    self.huuro[who][p + i] += 1
-                    self.tehai[who][p + i] -= 1
-                self.tehai[who][self.last_dahai] += 1
-                self.huuro_type[who][PaihuParser.SHUNTSU_TYPE] += 1
-                # print(self.url())
-                # print('順子', self.jp(p))
-                # t = ((m & 0xFC00) >> 10) % 3
-                # print('鳴いた場所', t)
-                # print('最後の打牌', self.jp(self.last_dahai))
-                # input()
+        match huuro:
+            case Chii():
+                self.tehai[who] -= (huuro.hais - huuro.stolen)
+                self.huuro[who].append(huuro)
 
-            # 明刻
-            elif self.is_minko(m) and self.last_dahai is not None:
-                p = ((m & 0xFE00) >> 9) // 3
-                self.huuro[who][p] += 3
-                self.tehai[who][p] -= 3
-                self.tehai[who][self.last_dahai] += 1
-                self.huuro_type[who][PaihuParser.MINKO_TYPE] += 1
-                # print(self.url())
-                # print('明刻', self.jp(p))
-                # print('最後の打牌', self.jp(self.last_dahai))
-                # input()
+            case Pon():
+                self.tehai[who] -= (huuro.hais - huuro.stolen)
+                self.huuro[who].append(huuro)
 
-            # 加槓
-            elif self.is_kakan(m) == 1:
-                p = ((m & 0xFE00) >> 9) // 3
-                self.huuro[who][p] += 1
-                self.huuro_type[who][PaihuParser.MINKO_TYPE] -= 1
-                self.huuro_type[who][PaihuParser.DAMINKAN_TYPE] += 1
-                # print(self.url())
-                # print('加槓', self.jp(p))
-                # input()
+            case Kakan():
+                for i, h in enumerate(self.huuro[who]):
+                    if isinstance(h, Pon) and h.hais == huuro.hais:
+                        new_huuro = h.to_kakan()
+                        self.huuro[who][i] = new_huuro
+                        self.tehai[who] -= new_huuro.added
+                        break
 
-            # 大明槓
-            elif self.last_dahai is not None:
-                p = ((m & 0xFF00) >> 8) // 4
-                self.huuro[who][p] += 4
-                self.tehai[who][p] -= 4
-                self.tehai[who][self.last_dahai] += 1
-                self.huuro_type[who][PaihuParser.DAMINKAN_TYPE] += 1
-                # print(self.url())
-                # print('大明槓', self.jp(p))
-                # print('最後の打牌', self.jp(self.last_dahai))
-                # input()
+            case Daiminkan():
+                self.tehai[who] -= (huuro.hais - huuro.stolen)
+                self.huuro[who].append(huuro)
+
+            case Ankan():
+                self.tehai[who] -= huuro.hais
+                self.huuro[who].append(huuro)
 
 
 if __name__ == '__main__':
