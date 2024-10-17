@@ -1,24 +1,16 @@
 import csv
 import os
 import re
-from enum import Enum
 from typing import Any
 
-from haihu_debugger import debug
 from kago_utils.hai import Hai136
 from kago_utils.hai_group import Hai34Group, Hai136Group
 from kago_utils.huuro import Ankan, Chii, Daiminkan, Kakan, Pon
 from kago_utils.shanten import Shanten
 
 from core.huuro_parser import HuuroParser
-
-
-class Mode(Enum):
-    DAHAI = 'dahai'
-    RIICHI = 'riichi'
-    ANKAN = 'ankan'
-    KAKAN = 'kakan'
-    RON_DAMINKAN_PON_CHII = 'ron_daiminkan_pon_chii'
+from core.mode import Mode
+from haihu_debugger import debug
 
 
 class HaihuParser():
