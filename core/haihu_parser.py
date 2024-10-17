@@ -99,7 +99,7 @@ class HaihuParser():
 
             # ドラ
             elif elem == 'DORA':
-                self.dora += Hai136(int(attr['hai']))
+                self.dora.append(Hai136(int(attr['hai'])))
 
             # 和了
             elif elem == 'AGARI':
@@ -211,7 +211,7 @@ class HaihuParser():
         return plane
 
     def jun_tehai_to_plane(self, who: int) -> list[int]:
-        # 自家の手牌(4planes * 4players)
+        # 全員の手牌(4planes * 4players)
         planes: list[int] = []
         for i in range(4):
             if i == who:
@@ -222,7 +222,7 @@ class HaihuParser():
         return planes
 
     def jun_tehai_aka_to_plane(self, who: int) -> list[int]:
-        # 自家の赤牌(1plane * 4players)
+        # 全員の赤牌(1plane * 4players)
         planes: list[int] = []
         for i in range(4):
             if i == who:
@@ -258,7 +258,7 @@ class HaihuParser():
         return planes
 
     def last_dahai_to_plane(self) -> list[int]:
-        # 他家の最終打牌(1plane * 4players)
+        # 全員の最終打牌(1plane * 4players)
         planes: list[int] = []
         for i in range(4):
             if self.last_dahai is not None and self.last_teban is not None and i == self.last_teban:
@@ -276,7 +276,8 @@ class HaihuParser():
 
     def dora_to_plane(self) -> list[int]:
         # ドラ(4planes)
-        return self.to_plane(self.dora, 4)
+        counter = Hai136Group(self.dora).to_hai34_group().to_counter()
+        return self.to_plane(counter, 4)
 
     def bakaze_to_plane(self) -> list[int]:
         # 場風(4planes)
@@ -338,23 +339,15 @@ class HaihuParser():
         x += self.kyoku_to_plane()
         x += self.position_to_plane(who)
 
+        # デバッグ開始
+        if self.debug:
+            print(self.url())
+            debug(x, y)
+            input()
+
         with open('./datasets/' + self.output_filename, 'a') as f:
             writer = csv.writer(f)
-
-            # 座順(4)
-            for i in range(4):
-                if i == who:
-                    x += [1] * 34
-                else:
-                    x += [0] * 34
-
             writer.writerow([y] + x)
-
-            # デバッグ開始
-            if self.debug:
-                print(self.url())
-                debug(x, y)
-                input()
 
         self.count += 1
 
@@ -369,7 +362,7 @@ class HaihuParser():
         self.tehai = [Hai136Group([]) for _ in range(4)]
         self.kawa = [[] for _ in range(4)]
         self.huuro = [[] for _ in range(4)]
-        self.dora = [0] * 34
+        self.dora = []
         self.riichi = [False] * 4
         self.kyoku = 0
         self.ten = [0] * 4
@@ -382,7 +375,7 @@ class HaihuParser():
         # 局数、本場、供託、ドラをパース
         kyoku, honba, kyotaku, _, _, dora = map(int, attr['seed'].split(','))
         self.kyoku = kyoku
-        self.dora[self.pai(dora)] += 1
+        self.dora.append(Hai136(dora))
 
         # 点棒状況をパース
         for who, ten in enumerate(map(int, attr['ten'].split(','))):
