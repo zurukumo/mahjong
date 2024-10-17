@@ -18,4 +18,4 @@ python_version = "3.12"
 
 [scripts]
 parse-haihu = "python -m scripts.parse_haihu"
-train = "python3 haihu_train.py"
+train-haihu = "python -m scripts.train_haihu"
