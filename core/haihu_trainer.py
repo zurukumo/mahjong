@@ -10,17 +10,11 @@ from torch.utils.data import DataLoader, TensorDataset
 
 from core.mode import Mode
 
-# 定数
-N_OUTPUT = {'ron_minkan_pon_chii': 7}
-N_CHANNEL = {'ron_minkan_pon_chii': 128}
-BATCH_SIZE = 32
-EPOCHS = 10
-H = 1
-W = 34
-
 
 class MyModel(nn.Module):
     def __init__(self, n_channel: int, n_output: int) -> None:
+        H = 1
+        W = 34
         super(MyModel, self).__init__()
         self.conv1 = nn.Conv2d(in_channels=n_channel, out_channels=32, kernel_size=(5, 2), padding='same')
         self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(5, 2), padding='same')
@@ -44,7 +38,7 @@ class MyModel(nn.Module):
 
 
 class HaihuTrainer:
-    def __init__(self, mode: Mode):
+    def __init__(self, mode: Mode, batch_size: int, n_epoch: int):
         match mode:
             case Mode.DAHAI:
                 self.n_channel = 140
@@ -66,6 +60,8 @@ class HaihuTrainer:
                 raise ValueError('Invalid mode')
 
         self.model = MyModel(self.n_channel, self.n_output)
+        self.batch_size = batch_size
+        self.n_epoch = n_epoch
 
         x, t = self.prepare_data()
         x_train, x_test, t_train, t_test = train_test_split(x, t, test_size=0.2, shuffle=True)
@@ -73,17 +69,17 @@ class HaihuTrainer:
         train_data = TensorDataset(torch.tensor(x_train, dtype=torch.float32), torch.tensor(t_train, dtype=torch.long))
         test_data = TensorDataset(torch.tensor(x_test, dtype=torch.float32), torch.tensor(t_test, dtype=torch.long))
 
-        self.train_loader = DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True)
-        self.test_loader = DataLoader(test_data, batch_size=BATCH_SIZE, shuffle=False)
+        self.train_loader = DataLoader(train_data, batch_size=self.batch_size, shuffle=True)
+        self.test_loader = DataLoader(test_data, batch_size=self.batch_size, shuffle=False)
 
         optimizer = Adam(self.model.parameters(), lr=0.001)
         criterion = nn.CrossEntropyLoss()
 
-        for epoch in range(EPOCHS):
+        for epoch in range(self.n_epoch):
             train_loss = self.train_model(optimizer, criterion)
             accuracy, test_loss = self.evaluate_model(criterion)
             print(', '.join([
-                f'Epoch {epoch+1}/{EPOCHS}',
+                f'Epoch {epoch+1}/{self.n_epoch}',
                 f'Train Loss: {train_loss:.4f}',
                 f'Test Loss: {test_loss:.4f}',
                 f'Accuracy: {accuracy*100:.2f}%'
