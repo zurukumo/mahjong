@@ -202,111 +202,104 @@ class HaihuParser():
 
             self.output(who, y)
 
-    def to_plane(self, counter: list[int], depth: int) -> list[int]:
-        plane = [0] * (34 * depth)
+    def to_planes(self, counter: list[int], depth: int) -> list[list[int]]:
+        planes = [[0] * 34 for _ in range(depth)]
         for i in range(34):
-            for j in range(depth):
-                if counter[i] > j:
-                    plane[j * 34 + i] = 1
-        return plane
+            for j in range(counter[i]):
+                planes[j][i] = 1
+        return planes
 
-    def jun_tehai_to_plane(self, who: int) -> list[int]:
+    def flatten(self, planes: list[list[int]]) -> list[int]:
+        return sum(planes, [])
+
+    def jun_tehai_to_plane(self, who: int) -> list[list[int]]:
         # 全員の手牌(4planes * 4players)
-        planes: list[int] = []
+        planes: list[list[int]] = []
         for i in range(4):
             if i == who:
                 counter = self.tehai[i].to_hai34_group().to_counter()
-                planes += self.to_plane(counter, 4)
+                planes.extend(self.to_planes(counter, 4))
             else:
-                planes += [0] * 34 * 4
+                planes.extend([[0] * 34 for _ in range(4)])
         return planes
 
-    def jun_tehai_aka_to_plane(self, who: int) -> list[int]:
+    def jun_tehai_aka_to_plane(self, who: int) -> list[list[int]]:
         # 全員の赤牌(1plane * 4players)
-        planes: list[int] = []
+        planes: list[list[int]] = []
         for i in range(4):
             if i == who:
                 counter = [0] * 34
                 for hai in self.tehai[who].hais:
                     if hai.is_aka():
                         counter[hai.to_hai34().id] += 1
-                planes += counter
+                planes.append(counter)
             else:
-                planes += [0] * 34
+                planes.append([0] * 34)
         return planes
 
-    def kawa_to_plane(self) -> list[int]:
+    def kawa_to_plane(self) -> list[list[int]]:
         # 全員の河(20planes * 4players)
-        planes: list[int] = []
+        planes: list[list[int]] = []
         for i in range(4):
             for j in range(20):
                 if j < len(self.kawa[i]):
-                    planes += Hai34Group([self.kawa[i][j].to_hai34()]).to_counter()
+                    planes.append(Hai34Group([self.kawa[i][j].to_hai34()]).to_counter())
                 else:
-                    planes += [0] * 34
+                    planes.append([0] * 34)
         return planes
 
-    def huuro_to_plane(self) -> list[int]:
+    def huuro_to_plane(self) -> list[list[int]]:
         # 全員の副露(4planes * 4players)
-        planes: list[int] = []
+        planes: list[list[int]] = []
         for i in range(4):
             tmp = Hai136Group([])
             for huuro in self.huuro[i]:
                 tmp += huuro.hais
             counter = tmp.to_hai34_group().to_counter()
-            planes += self.to_plane(counter, 4)
+            planes.extend(self.to_planes(counter, 4))
         return planes
 
-    def last_dahai_to_plane(self) -> list[int]:
+    def last_dahai_to_plane(self) -> list[list[int]]:
         # 全員の最終打牌(1plane * 4players)
-        planes: list[int] = []
+        planes: list[list[int]] = []
         for i in range(4):
             if self.last_dahai is not None and self.last_teban is not None and i == self.last_teban:
-                planes += Hai34Group([self.last_dahai.to_hai34()]).to_counter()
+                planes.append(Hai34Group([self.last_dahai.to_hai34()]).to_counter())
             else:
-                planes += [0] * 34
+                planes.append([0] * 34)
         return planes
 
-    def riichi_to_plane(self) -> list[int]:
+    def riichi_to_plane(self) -> list[list[int]]:
         # リーチ(4planes)
-        planes: list[int] = []
+        planes: list[list[int]] = []
         for i in range(4):
-            planes += [1] * 34 if self.riichi[i] else [0] * 34
+            planes.append([1] * 34 if self.riichi[i] else [0] * 34)
         return planes
 
-    def dora_to_plane(self) -> list[int]:
+    def dora_to_plane(self) -> list[list[int]]:
         # ドラ(4planes)
         counter = Hai136Group(self.dora).to_hai34_group().to_counter()
-        return self.to_plane(counter, 4)
+        return self.to_planes(counter, 4)
 
-    def bakaze_to_plane(self) -> list[int]:
+    def bakaze_to_plane(self) -> list[list[int]]:
         # 場風(4planes)
-        planes: list[int] = []
+        planes: list[list[int]] = []
         for i in range(4):
-            if i == self.kyoku // 4:
-                planes += [1] * 34
-            else:
-                planes += [0] * 34
+            planes.append([1] * 34 if i == self.kyoku // 4 else [0] * 34)
         return planes
 
-    def kyoku_to_plane(self) -> list[int]:
+    def kyoku_to_plane(self) -> list[list[int]]:
         # 局数(4planes)
-        planes: list[int] = []
+        planes: list[list[int]] = []
         for i in range(4):
-            if i == self.kyoku % 4:
-                planes += [1] * 34
-            else:
-                planes += [0] * 34
+            planes.append([1] * 34 if i == self.kyoku % 4 else [0] * 34)
         return planes
 
-    def position_to_plane(self, who: int) -> list[int]:
+    def position_to_plane(self, who: int) -> list[list[int]]:
         # 場所(4planes)
-        planes: list[int] = []
+        planes: list[list[int]] = []
         for i in range(4):
-            if i == who:
-                planes += [1] * 34
-            else:
-                planes += [0] * 34
+            planes.append([1] * 34 if i == who else [0] * 34)
         return planes
 
     @property
@@ -326,18 +319,20 @@ class HaihuParser():
         raise ValueError('Invalid Mode')
 
     def output(self, who: int, y: int) -> None:
-        x = []
+        planes: list[list[int]] = []
 
-        x += self.jun_tehai_to_plane(who)
-        x += self.jun_tehai_aka_to_plane(who)
-        x += self.huuro_to_plane()
-        x += self.kawa_to_plane()
-        x += self.last_dahai_to_plane()
-        x += self.riichi_to_plane()
-        x += self.dora_to_plane()
-        x += self.bakaze_to_plane()
-        x += self.kyoku_to_plane()
-        x += self.position_to_plane(who)
+        planes += self.jun_tehai_to_plane(who)
+        planes += self.jun_tehai_aka_to_plane(who)
+        planes += self.huuro_to_plane()
+        planes += self.kawa_to_plane()
+        planes += self.last_dahai_to_plane()
+        planes += self.riichi_to_plane()
+        planes += self.dora_to_plane()
+        planes += self.bakaze_to_plane()
+        planes += self.kyoku_to_plane()
+        planes += self.position_to_plane(who)
+
+        x = self.flatten(planes)
 
         # デバッグ開始
         if self.debug:
