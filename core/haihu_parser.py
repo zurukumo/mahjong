@@ -10,7 +10,6 @@ from kago_utils.shanten import Shanten
 
 from core.huuro_parser import HuuroParser
 from core.mode import Mode
-from haihu_debugger import debug
 
 
 class HaihuParser():
@@ -109,9 +108,6 @@ class HaihuParser():
     def url(self) -> str:
         return f'https://tenhou.net/0/?log={self.filename.replace('.xml', '')}&ts={self.ts}'
 
-    def pai(self, x: int) -> int:
-        return x // 4
-
     def sample_riichi(self, who: int) -> None:
         next_elem, _ = self.actions[self.action_i + 1]
 
@@ -202,6 +198,19 @@ class HaihuParser():
 
             self.output(who, y)
 
+    def debug_print(self, *values: object, end: str | None = "\n") -> None:
+        if self.debug:
+            print(*values, end=end)
+
+    def debug_planes(self, planes: list[list[int]], n_unit: int) -> None:
+        for i, plane in enumerate(planes):
+            self.debug_print(i, Hai34Group.from_counter(plane).to_string())
+            if i % n_unit == n_unit - 1:
+                if i == len(planes) - 1:
+                    self.debug_print('')
+                else:
+                    self.debug_print('============')
+
     def to_planes(self, counter: list[int], depth: int) -> list[list[int]]:
         planes = [[0] * 34 for _ in range(depth)]
         for i in range(34):
@@ -221,6 +230,9 @@ class HaihuParser():
                 planes.extend(self.to_planes(counter, 4))
             else:
                 planes.extend([[0] * 34 for _ in range(4)])
+
+        self.debug_print("手牌")
+        self.debug_planes(planes, 4)
         return planes
 
     def jun_tehai_aka_to_plane(self, who: int) -> list[list[int]]:
@@ -235,6 +247,9 @@ class HaihuParser():
                 planes.append(counter)
             else:
                 planes.append([0] * 34)
+
+        self.debug_print("赤牌")
+        self.debug_planes(planes, 1)
         return planes
 
     def kawa_to_plane(self) -> list[list[int]]:
@@ -246,6 +261,9 @@ class HaihuParser():
                     planes.append(Hai34Group([self.kawa[i][j].to_hai34()]).to_counter())
                 else:
                     planes.append([0] * 34)
+
+        self.debug_print("河")
+        self.debug_planes(planes, 20)
         return planes
 
     def huuro_to_plane(self) -> list[list[int]]:
@@ -257,6 +275,9 @@ class HaihuParser():
                 tmp += huuro.hais
             counter = tmp.to_hai34_group().to_counter()
             planes.extend(self.to_planes(counter, 4))
+
+        self.debug_print("副露")
+        self.debug_planes(planes, 4)
         return planes
 
     def last_dahai_to_plane(self) -> list[list[int]]:
@@ -267,6 +288,9 @@ class HaihuParser():
                 planes.append(Hai34Group([self.last_dahai.to_hai34()]).to_counter())
             else:
                 planes.append([0] * 34)
+
+        self.debug_print("最終打牌")
+        self.debug_planes(planes, 1)
         return planes
 
     def riichi_to_plane(self) -> list[list[int]]:
@@ -274,18 +298,27 @@ class HaihuParser():
         planes: list[list[int]] = []
         for i in range(4):
             planes.append([1] * 34 if self.riichi[i] else [0] * 34)
+
+        self.debug_print("リーチ")
+        self.debug_planes(planes, 1)
         return planes
 
     def dora_to_plane(self) -> list[list[int]]:
         # ドラ(4planes)
-        counter = Hai136Group(self.dora).to_hai34_group().to_counter()
-        return self.to_planes(counter, 4)
+        planes = self.to_planes(Hai136Group(self.dora).to_hai34_group().to_counter(), 4)
+
+        self.debug_print("ドラ")
+        self.debug_planes(planes, 4)
+        return planes
 
     def bakaze_to_plane(self) -> list[list[int]]:
         # 場風(4planes)
         planes: list[list[int]] = []
         for i in range(4):
             planes.append([1] * 34 if i == self.kyoku // 4 else [0] * 34)
+
+        self.debug_print("場風")
+        self.debug_planes(planes, 4)
         return planes
 
     def kyoku_to_plane(self) -> list[list[int]]:
@@ -293,6 +326,9 @@ class HaihuParser():
         planes: list[list[int]] = []
         for i in range(4):
             planes.append([1] * 34 if i == self.kyoku % 4 else [0] * 34)
+
+        self.debug_print("局")
+        self.debug_planes(planes, 4)
         return planes
 
     def position_to_plane(self, who: int) -> list[list[int]]:
@@ -300,6 +336,9 @@ class HaihuParser():
         planes: list[list[int]] = []
         for i in range(4):
             planes.append([1] * 34 if i == who else [0] * 34)
+
+        self.debug_print("場所")
+        self.debug_planes(planes, 4)
         return planes
 
     @property
@@ -319,6 +358,8 @@ class HaihuParser():
         raise ValueError('Invalid Mode')
 
     def output(self, who: int, y: int) -> None:
+        self.debug_print(self.url())
+
         planes: list[list[int]] = []
 
         planes += self.jun_tehai_to_plane(who)
@@ -334,10 +375,8 @@ class HaihuParser():
 
         x = self.flatten(planes)
 
-        # デバッグ開始
+        # デバッグ時は入力を待つ
         if self.debug:
-            print(self.url())
-            debug(x, y)
             input()
 
         with open('./datasets/' + self.output_filename, 'a') as f:
