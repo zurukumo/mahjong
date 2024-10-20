@@ -104,7 +104,6 @@ class HaihuTrainer:
         self.model.train()
         running_loss = 0.0
         for inputs, labels in self.train_loader:
-            inputs, labels = torch.tensor(inputs, dtype=torch.float32), torch.tensor(labels, dtype=torch.long)
             optimizer.zero_grad()
             outputs = self.model(inputs)
             loss = criterion(outputs, labels.squeeze())
@@ -121,7 +120,6 @@ class HaihuTrainer:
         running_loss = 0.0
         with torch.no_grad():
             for inputs, labels in self.test_loader:
-                inputs, labels = torch.tensor(inputs, dtype=torch.float32), torch.tensor(labels, dtype=torch.long)
                 outputs = self.model(inputs)
                 loss = criterion(outputs, labels.squeeze())
                 running_loss += loss.item()
