@@ -3,7 +3,8 @@ __pycache__
 .venv
 *.code-workspace
 
-datasets
-models
-haihus
+datasets/**/*.csv
+models/**/*.h5
+models/**/*.pth
+haihus/**/*.xml
 thesis
