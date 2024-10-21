@@ -1,12 +1,10 @@
 import os
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from sklearn.model_selection import train_test_split
 from torch.optim.adam import Adam
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader, TensorDataset, random_split
 
 from core.mode import Mode
 
@@ -41,45 +39,37 @@ class HaihuTrainer:
     def __init__(self, mode: Mode, batch_size: int, n_epoch: int):
         match mode:
             case Mode.DAHAI:
-                self.n_channel = 140
                 self.n_output = 34
                 self.filename = 'dahai'
             case Mode.RIICHI:
-                self.n_channel = 140
                 self.n_output = 2
                 self.filename = 'riichi'
             case Mode.ANKAN:
-                self.n_channel = 140
                 self.n_output = 34
                 self.filename = 'ankan'
             case Mode.RON_DAMINKAN_PON_CHII:
-                self.n_channel = 140
                 self.n_output = 7
                 self.filename = 'ron_daiminkan_pon_chii'
             case _:
                 raise ValueError('Invalid mode')
 
-        self.model = MyModel(self.n_channel, self.n_output)
-        self.batch_size = batch_size
-        self.n_epoch = n_epoch
-
+        # テストデータの準備
         x, t = self.prepare_data()
-        x_train, x_test, t_train, t_test = train_test_split(x, t, test_size=0.2, shuffle=True)
+        dataset = TensorDataset(x, t)
+        train_dataset, test_dataset = random_split(dataset, [0.8, 0.2])
+        self.train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+        self.test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-        train_data = TensorDataset(torch.tensor(x_train, dtype=torch.float32), torch.tensor(t_train, dtype=torch.long))
-        test_data = TensorDataset(torch.tensor(x_test, dtype=torch.float32), torch.tensor(t_test, dtype=torch.long))
-
-        self.train_loader = DataLoader(train_data, batch_size=self.batch_size, shuffle=True)
-        self.test_loader = DataLoader(test_data, batch_size=self.batch_size, shuffle=False)
-
+        # モデル、最適化手法、損失関数の設定
+        self.model = MyModel(x.shape[1], self.n_output)
         optimizer = Adam(self.model.parameters(), lr=0.001)
         criterion = nn.CrossEntropyLoss()
 
-        for epoch in range(self.n_epoch):
+        for epoch in range(n_epoch):
             train_loss = self.train_model(optimizer, criterion)
             accuracy, test_loss = self.evaluate_model(criterion)
             print(', '.join([
-                f'Epoch {epoch+1}/{self.n_epoch}',
+                f'Epoch {epoch+1}/{n_epoch}',
                 f'Train Loss: {train_loss:.4f}',
                 f'Test Loss: {test_loss:.4f}',
                 f'Accuracy: {accuracy*100:.2f}%'
@@ -93,11 +83,8 @@ class HaihuTrainer:
     # データ準備関数
     def prepare_data(self):
         current_dir = os.path.dirname(__file__)
-        filepath = os.path.join(current_dir, f'../datasets/{self.filename}.csv')
-        data = np.genfromtxt(filepath, delimiter=',', dtype=np.int8)
-        t, x = np.hsplit(data, [1])
-        x = x.reshape(-1, self.n_channel, 1, 34)
-        return x, t
+        dataset = torch.load(os.path.join(current_dir, f'../datasets/{self.filename}.pt'))
+        return dataset['x'], dataset['t']
 
     # 学習用関数
     def train_model(self, optimizer, criterion):

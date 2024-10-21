@@ -1,8 +1,8 @@
-import csv
 import os
 import re
-from typing import Any
+from typing import Any, Generator
 
+import torch
 from kago_utils.hai import Hai136
 from kago_utils.hai_group import Hai34Group, Hai136Group
 from kago_utils.huuro import Ankan, Chii, Daiminkan, Kakan, Pon
@@ -19,6 +19,9 @@ class HaihuParser():
     mode: Mode
     max_case: int
     debug: bool
+
+    x: list[list[list[int]]]
+    t: list[int]
 
     filename: str
     ts: int
@@ -39,6 +42,7 @@ class HaihuParser():
 
     __slots__ = (
         'count', 'mode', 'max_case', 'debug',
+        'x', 't',
         'filename', 'ts', 'actions', 'action_i',
         'tehai', 'huuro', 'kawa', 'dora', 'riichi', 'kyoku', 'ten',
         'last_teban', 'last_tsumo', 'last_dahai', 'who'
@@ -50,60 +54,73 @@ class HaihuParser():
         self.max_case = max_case
         self.debug = debug
 
-        self.remove_file_if_exists()
+        self.x = []
+        self.t = []
+
         self.run()
 
-    def remove_file_if_exists(self) -> None:
-        if os.path.exists(f'./datasets/{self.output_filename}'):
-            os.remove(f'./datasets/{self.output_filename}')
+        dataset = {
+            "x": torch.tensor(self.x, dtype=torch.float32).unsqueeze(2),
+            "t": torch.tensor(self.t, dtype=torch.long)
+        }
+        torch.save(dataset, f"./datasets/{self.output_filename}.pt")
 
     def run(self) -> None:
-        for year in HaihuParser.YEARS:
-            file_dir = f'./haihus/xml{year}'
-            for filename in os.listdir(file_dir):
-                self.filename = filename
-                self.ts = -1
-                self.parse_xml(f'{file_dir}/{filename}')
+        for filepath, filename in self.list_xml_files():
+            self.filename = filename
+            self.ts = -1
+            self.actions = self.parse_xml(filepath)
 
-    def parse_xml(self, filename: str) -> None:
+            for action_i, (elem, attr) in enumerate(self.actions):
+                self.action_i = action_i
+
+                # 開局
+                if elem == 'INIT':
+                    self.parse_init_tag(attr)
+
+                # ツモ
+                elif re.match(r'[T|U|V|W][0-9]+', elem):
+                    self.parse_tsumo_tag(elem)
+
+                # 打牌
+                elif re.match(r'[D|E|F|G][0-9]+', elem):
+                    self.parse_dahai_tag(elem)
+
+                # 副露
+                elif elem == 'N':
+                    self.parse_huuro_tag(attr)
+
+                # リーチ成立
+                elif elem == 'REACH' and attr['step'] == '2':
+                    who = int(attr['who'])
+                    self.riichi[who] = True
+
+                # ドラ
+                elif elem == 'DORA':
+                    self.dora.append(Hai136(int(attr['hai'])))
+
+                # 和了
+                elif elem == 'AGARI':
+                    who = int(attr['who'])
+                    self.who = who
+
+                if self.count >= self.max_case:
+                    return
+
+    def list_xml_files(self) -> Generator[tuple[str, str], None, None]:
+        for year in HaihuParser.YEARS:
+            for filename in os.listdir(f'./haihus/xml{year}'):
+                filepath = f'./haihus/xml{year}/{filename}'
+                yield filepath, filename
+
+    def parse_xml(self, filename: str) -> list[tuple[str, dict[str, str]]]:
         with open(filename, 'r') as xml:
             self.actions = []
             for elem, attr in re.findall(r'<(.*?)[ /](.*?)/?>', xml.read()):
                 attr = dict(re.findall(r'\s?(.*?)="(.*?)"', attr))
                 self.actions.append((elem, attr))
 
-        for action_i, (elem, attr) in enumerate(self.actions):
-            self.action_i = action_i
-
-            # 開局
-            if elem == 'INIT':
-                self.parse_init_tag(attr)
-
-            # ツモ
-            elif re.match(r'[T|U|V|W][0-9]+', elem):
-                self.parse_tsumo_tag(elem)
-
-            # 打牌
-            elif re.match(r'[D|E|F|G][0-9]+', elem):
-                self.parse_dahai_tag(elem)
-
-            # 副露
-            elif elem == 'N':
-                self.parse_huuro_tag(attr)
-
-            # リーチ成立
-            elif elem == 'REACH' and attr['step'] == '2':
-                who = int(attr['who'])
-                self.riichi[who] = True
-
-            # ドラ
-            elif elem == 'DORA':
-                self.dora.append(Hai136(int(attr['hai'])))
-
-            # 和了
-            elif elem == 'AGARI':
-                who = int(attr['who'])
-                self.who = who
+        return self.actions
 
     def url(self) -> str:
         return f'https://tenhou.net/0/?log={self.filename.replace('.xml', '')}&ts={self.ts}'
@@ -345,19 +362,19 @@ class HaihuParser():
     def output_filename(self) -> str:
         match self.mode:
             case Mode.DAHAI:
-                return 'dahai.csv'
+                return 'dahai'
             case Mode.RIICHI:
-                return 'riichi.csv'
+                return 'riichi'
             case Mode.ANKAN:
-                return 'ankan.csv'
+                return 'ankan'
             case Mode.KAKAN:
-                return 'kakan.csv'
+                return 'kakan'
             case Mode.RON_DAMINKAN_PON_CHII:
-                return 'ron_daiminkan_pon_chii.csv'
+                return 'ron_daiminkan_pon_chii'
 
         raise ValueError('Invalid Mode')
 
-    def output(self, who: int, y: int) -> None:
+    def output(self, who: int, t: int) -> None:
         self.debug_print(self.url())
 
         planes: list[list[int]] = []
@@ -373,22 +390,16 @@ class HaihuParser():
         planes += self.kyoku_to_plane()
         planes += self.position_to_plane(who)
 
-        x = self.flatten(planes)
-
         # デバッグ時は入力を待つ
         if self.debug:
             input()
 
-        with open('./datasets/' + self.output_filename, 'a') as f:
-            writer = csv.writer(f)
-            writer.writerow([y] + x)
+        self.x.append(planes)
+        self.t.append(t)
 
         self.count += 1
 
         print(self.count, '/', self.max_case)
-        if self.count == self.max_case:
-            print('終了')
-            exit()
 
     def parse_init_tag(self, attr: dict[str, Any]) -> None:
         self.ts += 1
