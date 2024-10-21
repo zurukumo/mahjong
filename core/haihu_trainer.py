@@ -11,14 +11,13 @@ from core.mode import Mode
 
 class MyModel(nn.Module):
     def __init__(self, n_channel: int, n_output: int) -> None:
-        H = 1
         W = 34
         super(MyModel, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels=n_channel, out_channels=32, kernel_size=(5, 2), padding='same')
-        self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(5, 2), padding='same')
-        self.conv3 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=(5, 2), padding='same')
+        self.conv1 = nn.Conv1d(in_channels=n_channel, out_channels=32, kernel_size=5, padding='same')
+        self.conv2 = nn.Conv1d(in_channels=32, out_channels=64, kernel_size=5, padding='same')
+        self.conv3 = nn.Conv1d(in_channels=64, out_channels=128, kernel_size=5, padding='same')
         self.dropout = nn.Dropout(0.2)
-        self.fc1 = nn.Linear(128 * H * W, 128)
+        self.fc1 = nn.Linear(128 * W, 128)
         self.fc2 = nn.Linear(128, n_output)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -83,7 +82,7 @@ class HaihuTrainer:
     # データ準備関数
     def prepare_data(self):
         current_dir = os.path.dirname(__file__)
-        dataset = torch.load(os.path.join(current_dir, f'../datasets/{self.filename}.pt'))
+        dataset = torch.load(os.path.join(current_dir, f'../datasets/{self.filename}.pt'), weights_only=True)
         return dataset['x'], dataset['t']
 
     # 学習用関数

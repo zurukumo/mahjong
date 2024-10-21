@@ -60,7 +60,7 @@ class HaihuParser():
         self.run()
 
         dataset = {
-            "x": torch.tensor(self.x, dtype=torch.float32).unsqueeze(2),
+            "x": torch.tensor(self.x, dtype=torch.float32),
             "t": torch.tensor(self.t, dtype=torch.long)
         }
         torch.save(dataset, f"./datasets/{self.output_filename}.pt")
